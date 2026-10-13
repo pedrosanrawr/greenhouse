@@ -1,4 +1,4 @@
-# Computational Science
+# Greenhouse - Computational Science
 
 A Computational Science project developed using **Python** and **Streamlit** to implement, simulate, and visualize computational models.
 
@@ -19,7 +19,7 @@ This project explores computational methods through simulations, numerical compu
 ## Project Structure
 
 ```text
-computational-science/
+greenhouse/
 ├── app.py
 ├── simulation/
 ├── data/
@@ -35,7 +35,7 @@ computational-science/
 
 ```bash
 git clone YOUR_REPOSITORY_URL
-cd computational-science
+cd greenhouse
 ```
 
 ### 2. Set up a Python environment (Optional)
