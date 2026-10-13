@@ -38,33 +38,37 @@ git clone YOUR_REPOSITORY_URL
 cd computational-science
 ```
 
-### 2. Create a virtual environment
+### 2. Set up a Python environment (Optional)
 
-```bash
+Using a virtual environment is **optional but recommended** to keep project dependencies separate from other Python projects.
+
+To create a virtual environment on Windows:
+
+```powershell
 py -m venv .venv
 ```
 
-### 3. Activate the environment
-
-Windows PowerShell:
+Activate it using Windows PowerShell:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
-### 4. Install dependencies
+If you already have a Python environment with the required dependencies installed, you can use it instead.
+
+### 3. Install dependencies
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-### 5. Run the application
+### 4. Run the application
 
 ```bash
 streamlit run app.py
 ```
 
-The application will open in your browser, usually at `http://localhost:8501`.
+The application will open in your browser, usually at [http://localhost:8501](http://localhost:8501).
 
 ## Development Workflow
 
@@ -72,7 +76,7 @@ The application will open in your browser, usually at `http://localhost:8501`.
 2. Create a branch for your assigned task.
 3. Commit changes using consistent commit messages.
 4. Push your branch to GitHub.
-5. Open a pull request for review then merging into `main`.
+5. Open a pull request for review before merging into `main`.
 
 ## License
 
