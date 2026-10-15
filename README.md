@@ -81,3 +81,83 @@ The application will open in your browser, usually at [http://localhost:8501](ht
 ## License
 
 For academic use. License to be determined.
+
+## Milestones
+
+1. Make the engine internally consistent
+2. Establish automated correctness checks
+3. Improve the biological model
+4. Make outputs explain the model
+5. Validate tomato performance
+6. Refine usability and extendability 
+
+## TBD
+1. Core biomass and carbon accounting
+    [] Define biomass and assimilation units
+    [] Establish carbon/accounting rules
+    [] Correct maintenance respiration
+    [] Define reserve behavior
+    [] Define biomass and senscence
+    [] Prevent impossible states
+
+2. Make greenhouse controls affect the simulation
+    [] Temperature response
+    [] Light input
+    [] Nutrient limitation
+    [] Ariflow
+    [] Plant area and density 
+    [] Input Validation
+
+3. Build automated test suites
+    [] Zero-light test
+    [] Temperature boundary tests
+    [] Limitation tests
+    [] Biomass conesrvation tests
+    [] Numerical Stability tests
+    [] Repeatability tests
+    [] INterface Integration Tests
+
+4. Improve plant development and source-sink dynamics
+    [] Define development stages
+    [] Link development to time and environmnet
+    [] Improve organ sink demand
+    [] Define allocation rules
+    [] Improve fruit set and filling
+    [] Improve leaf area dynamics
+    [] Establis yield accounting
+
+5. Improve the streamlit results and diagnostic
+    [] Organ biomass over time
+    [] Total versus harvestable biomass
+    [] Growth rate
+    [] Source-sink diagnostics
+    [] Environmental diagnostics
+    [] Simulation Summary
+
+6. Validate and calibrate against real tomato data
+    [] Create a parameter register
+    [] Obrain reference data
+    [] Mathc simulation conditions
+    [] Compare model predicitons
+    [] Calibrate selected parameters
+    [] Validate independently
+    [] Document the model's valid scope
+    
+7. IMprove simulation workflow and usability
+    [] INitial conditions
+    [] Run config
+    [] Scenario comparison
+    [] Reproducible exports
+    [] Error handling
+8. prep for multiple props 
+
+
+
+## Features to be implemented
+
+1. Simulation Engine - Basic Ver. Done
+    * Simulate 
+
+## Current Changes
+
+1. Update goal from yield to biomass as the primary target but also keeping yield as a secondary target.
