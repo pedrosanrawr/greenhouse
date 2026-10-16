@@ -53,6 +53,7 @@ class ResourceAvailability:
 class CropState:
     biomass_g: Dict[str, float]
     reserve_g: float = 0.0
+    senesced_biomass_g: float = 0.0
     development_day: int = 0
 
 
@@ -69,6 +70,7 @@ class GrowthFlux:
     limiting_factor: str
     temperature_factor: float
     environment_factor: float
+    maintenance_deficit_g_day: float = 0.0
 
 
 @dataclass(frozen=True)
