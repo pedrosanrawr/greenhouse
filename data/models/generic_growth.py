@@ -1,8 +1,17 @@
-import data.models.types as t
-print(t.__file__)
-print(dir(t))
+"""Generic crop-growth fallback used by the initial tomato setup.
 
-"""Generic crop-growth fallback used by the initial tomato setup."""
+Baseline biomass-accounting rules (README, "Core biomass and carbon accounting"):
+
+* Reserves are a per-plant store of assimilates. Leftover assimilates after
+  maintenance respiration and growth are stored, and the store is drawn down to
+  buffer growth on days when current assimilation cannot meet sink demand.
+  Reserves never fall below zero.
+* Senescence removes living biomass from an organ and records the same amount in
+  a cumulative senesced (litter) pool, so lost biomass is tracked separately
+  from living biomass.
+* Neither living biomass nor reserves are allowed to become negative, and no
+  organ growth is produced when the required assimilates are unavailable.
+"""
 import math
 
 from data.models.contracts import CropGrowthModel
@@ -14,6 +23,13 @@ from data.models.types import (
     ORGANS,
     ResourceAvailability,
 )
+
+# TEST VALUE: reserves are capped at this fraction of post-growth living biomass
+# so that unused assimilates cannot accumulate without bound.
+RESERVE_CAP_FRACTION = 0.10  # TEST VALUE
+
+# TEST VALUE: daily leaf senescence as a fraction of current leaf biomass.
+LEAF_SENESCENCE_RATE = 0.005  # TEST VALUE
 
 
 def temperature_response(temp: float, base: float, optimum: float, maximum: float) -> float:
@@ -32,6 +48,7 @@ class GenericCropGrowthModel(CropGrowthModel):
         return CropState(
             biomass_g={organ: float(crop.initial_biomass.get(organ, 0.0)) for organ in ORGANS},
             reserve_g=0.0,
+            senesced_biomass_g=0.0,
             development_day=0,
         )
 
@@ -84,29 +101,56 @@ class GenericCropGrowthModel(CropGrowthModel):
             demand["flower"] = min(demand.get("flower", 0.0), 0.01)
         total_demand = sum(demand.values())
 
-        available = max(0.0, state.reserve_g + gross_assimilation - maintenance_respiration)
-        if total_demand > 0 and available >= total_demand:
+        # --- Reserve behavior -------------------------------------------------
+        # Carbon available for growth is today's net assimilation plus whatever
+        # is already held in the reserve store. Reserves make assimilates from
+        # earlier days available again when current assimilation is insufficient.
+        net_assimilation = gross_assimilation - maintenance_respiration
+        available = max(0.0, state.reserve_g) + net_assimilation
+        maintenance_deficit = 0.0
+        if available < 0.0:
+            # Maintenance respiration exceeded reserves plus assimilation. No
+            # carbon remains for growth and the reserve store is emptied, but it
+            # is never allowed to go negative.
+            maintenance_deficit = -available
+            available = 0.0
+
+        if total_demand <= 0.0:
+            # No sink is requesting carbon, so whatever is available is stored.
+            organ_growth = {organ: 0.0 for organ in ORGANS}
+            reserve_after = available
+            limiting_factor = "no sink demand"
+        elif available >= total_demand:
+            # Sink-limited: every organ receives its full demand and the
+            # remainder is stored in the reserve pool.
             organ_growth = dict(demand)
             reserve_after = available - total_demand
             limiting_factor = "sink"
-        elif total_demand > 0:
+        else:
+            # Source-limited: assimilates cannot meet demand. Available carbon is
+            # shared proportionally and nothing is stored. Growth can never
+            # exceed the carbon that is actually available.
             organ_growth = {
                 organ: available * demand.get(organ, 0.0) / total_demand for organ in ORGANS
             }
             reserve_after = 0.0
             limiting_factor = "source"
-        else:
-            organ_growth = {organ: 0.0 for organ in ORGANS}
-            reserve_after = available
-            limiting_factor = "no sink demand"
 
-        # TEST VALUE: 0.5% daily leaf senescence; provisional baseline assumption.
+        # --- Senescence -------------------------------------------------------
+        # Dying leaf tissue is removed from living biomass and recorded in the
+        # cumulative senesced (litter) pool. The engine applies both changes, so
+        # lost biomass is tracked separately rather than silently discarded.
         organ_loss = {organ: 0.0 for organ in ORGANS}
-        organ_loss["leaf"] = max(0.0, state.biomass_g.get("leaf", 0.0)) * 0.005
+        organ_loss["leaf"] = (
+            max(0.0, state.biomass_g.get("leaf", 0.0)) * LEAF_SENESCENCE_RATE
+        )
 
-        # Keep reserve storage bounded as in the original prototype.
+        # --- Reserve storage cap ---------------------------------------------
+        # Bound the reserve store so unused assimilates cannot accumulate without
+        # limit. Carbon above the cap is not carried forward.
         estimated_post_growth = sum(state.biomass_g.values()) + sum(organ_growth.values())
-        reserve_after = min(reserve_after, 0.1 * max(estimated_post_growth, 0.0))
+        reserve_cap = RESERVE_CAP_FRACTION * max(0.0, estimated_post_growth)
+        reserve_after = min(max(0.0, reserve_after), reserve_cap)
 
         return GrowthFlux(
             organ_growth_g=organ_growth,
@@ -119,4 +163,5 @@ class GenericCropGrowthModel(CropGrowthModel):
             limiting_factor=limiting_factor,
             temperature_factor=f_temp,
             environment_factor=f_environment,
+            maintenance_deficit_g_day=maintenance_deficit,
         )

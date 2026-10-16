@@ -1,11 +1,40 @@
-"""Simulation engine: coordinates models and owns the daily time loop."""
+"""Simulation engine: coordinates models and owns the daily time loop.
+
+The engine is the single place that mutates crop state, so it is also the single
+place that enforces the "no impossible states" rules:
+
+* living biomass, the reserve store, and the senesced pool are never negative or
+  non-finite;
+* tissue loss cannot exceed the biomass an organ currently holds;
+* organ growth is rejected if it exceeds the assimilates actually available.
+"""
+import math
 from datetime import date, timedelta
 
 import pandas as pd
 
 from data.models.environment import ConstantEnvironmentModel
-from data.models.types import GreenhouseConfig, ORGANS
+from data.models.types import CropState, GreenhouseConfig, ORGANS
 from data.plants.base import CropDefinition
+
+# Tolerate tiny floating-point rounding when checking the carbon budget.
+_CARBON_EPSILON = 1e-9
+
+
+def _validate_state(state: CropState, day_index: int) -> None:
+    """Raise if any tracked quantity is negative or non-finite."""
+    for organ in ORGANS:
+        value = state.biomass_g.get(organ, 0.0)
+        if not math.isfinite(value) or value < 0.0:
+            raise ValueError(
+                f"impossible {organ} biomass on day {day_index}: {value!r}"
+            )
+    if not math.isfinite(state.reserve_g) or state.reserve_g < 0.0:
+        raise ValueError(f"impossible reserve on day {day_index}: {state.reserve_g!r}")
+    if not math.isfinite(state.senesced_biomass_g) or state.senesced_biomass_g < 0.0:
+        raise ValueError(
+            f"impossible senesced biomass on day {day_index}: {state.senesced_biomass_g!r}"
+        )
 
 
 def run_simulation(
@@ -44,13 +73,36 @@ def run_simulation(
         )
 
         # The engine applies model-calculated state changes; models don't own the loop.
+        # Guard 1: growth may not exceed the assimilates actually available.
+        reserve_before = max(0.0, state.reserve_g)
+        available_carbon = max(
+            0.0,
+            reserve_before
+            + max(0.0, flux.gross_assimilation_g_day)
+            - max(0.0, flux.maintenance_respiration_g_day),
+        )
+        requested_growth = sum(
+            max(0.0, flux.organ_growth_g.get(organ, 0.0)) for organ in ORGANS
+        )
+        if requested_growth > available_carbon + _CARBON_EPSILON:
+            raise ValueError(
+                f"growth requested without available assimilates on day {day_index}: "
+                f"{requested_growth:.6g} > {available_carbon:.6g}"
+            )
+
+        daily_loss = 0.0
         for organ in ORGANS:
             old_biomass = max(0.0, state.biomass_g.get(organ, 0.0))
             growth = max(0.0, flux.organ_growth_g.get(organ, 0.0))
-            loss = max(0.0, flux.organ_loss_g.get(organ, 0.0))
+            # Guard 2: an organ cannot lose more tissue than it currently holds.
+            loss = min(max(0.0, flux.organ_loss_g.get(organ, 0.0)), old_biomass)
             state.biomass_g[organ] = max(0.0, old_biomass + growth - loss)
+            # Lost tissue is tracked separately in the senesced (litter) pool.
+            state.senesced_biomass_g += loss
+            daily_loss += loss
         state.reserve_g = max(0.0, flux.reserve_after_g)
         state.development_day = day_index + 1
+        _validate_state(state, day_index)
 
         yield_state = yield_model.estimate_yield(crop.parameters, state, day_index)
         total_biomass = sum(state.biomass_g.values())
@@ -77,6 +129,9 @@ def run_simulation(
             "water_factor": resources.water_factor,
             "nutrient_factor": resources.nutrient_factor,
             "reserve_g": state.reserve_g,
+            "senesced_biomass_g": state.senesced_biomass_g,
+            "tissue_loss_g_day": daily_loss,
+            "maintenance_deficit_g_day": flux.maintenance_deficit_g_day,
             "temperature_c": environment.temperature_c,
             "light_hours": environment.light_hours,
             "irradiance_ppfd": environment.irradiance_ppfd,
