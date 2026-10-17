@@ -30,6 +30,30 @@ TOMATO_PARAMETERS = CropParameters(
         "flower": 0.02,  # TEST VALUE
         "fruit": 0.25,  # TEST VALUE
     },
+    # Fraction of new biomass allocated to each organ, per phase.
+    # Each phase sums to 1.0. Omitted organs (root_tuber, stem_tuber) are
+    # auto-filled with 0. Keep phases in development order.
+    biomass_ratio={
+        "vegetative": {
+            "leaf": 0.50,  # TEST VALUE
+            "stem": 0.30,  # TEST VALUE
+            "root": 0.20,  # TEST VALUE
+        },
+        "flowering": {
+            "leaf": 0.35,  # TEST VALUE
+            "stem": 0.30,  # TEST VALUE
+            "root": 0.15,  # TEST VALUE
+            "flower": 0.10,  # TEST VALUE
+            "fruit": 0.10,  # TEST VALUE
+        },
+        "fruiting": {
+            "leaf": 0.20,  # TEST VALUE
+            "stem": 0.10,  # TEST VALUE
+            "root": 0.08,  # TEST VALUE
+            "flower": 0.02,  # TEST VALUE
+            "fruit": 0.60,  # TEST VALUE
+        },
+    },
     initial_biomass={
         "leaf": 1.0,  # TEST VALUE, g/plant
         "stem": 0.5,  # TEST VALUE
@@ -42,6 +66,13 @@ TOMATO_PARAMETERS = CropParameters(
     cycle_max_days=150,
     first_harvest_min_days=70,
     first_harvest_max_days=130,
+        # Day each phase starts. Fruiting begins before first_harvest_min_days (70).
+    phase_start_days={
+        "vegetative": 0,   # TEST VALUE
+        "flowering": 35,   # TEST VALUE
+        "fruiting": 65,    # TEST VALUE
+    },
+    total_biomass_g=150.0,  # TEST VALUE: potential dry mass per plant at cycle end
 )
 
 TOMATO = CropDefinition(

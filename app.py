@@ -5,6 +5,15 @@ from data.models.types import GreenhouseConfig
 from data.plants import CROPS
 from simulation.engine import run_simulation
 
+ORGAN_COLUMNS = {
+    "leaf_biomass_g": "Leaf",
+    "stem_biomass_g": "Stem",
+    "root_biomass_g": "Root",
+    "flower_biomass_g": "Flower",
+    "fruit_biomass_g": "Fruit",
+    "root_tuber_biomass_g": "Root tuber",
+    "stem_tuber_biomass_g": "Stem tuber",
+}
 st.set_page_config(page_title="Greenhouse Simulator", page_icon="🌱", layout="wide")
 
 st.sidebar.title("Greenhouse Simulator")
@@ -93,11 +102,16 @@ with charts_tab:
 
         st.markdown("**Biomass by organ**")
         crop_for_organs = st.selectbox("Crop to inspect", selected_crops)
-        organ_rows = all_results[all_results["crop"] == crop_for_organs]
-        organ_chart = organ_rows.set_index("day")[
-            ["leaf_biomass_g", "stem_biomass_g", "root_biomass_g", "flower_biomass_g", "fruit_biomass_g"]
-        ]
-        st.line_chart(organ_chart, y_label="Dry biomass (g/plant)", x_label="Day")
+        chart_style = st.radio("Chart style", ["Stacked", "Lines"], horizontal=True)
+
+        organ_rows = all_results[all_results["crop"] == crop_for_organs].set_index("day")
+        organ_chart = organ_rows[list(ORGAN_COLUMNS)].rename(columns=ORGAN_COLUMNS)
+        organ_chart = organ_chart.loc[:, (organ_chart > 0).any()]
+
+        if chart_style == "Stacked":
+            st.area_chart(organ_chart, y_label="Dry biomass (g/plant)", x_label="Day")
+        else:
+            st.line_chart(organ_chart, y_label="Dry biomass (g/plant)", x_label="Day")
 
         st.markdown("**Harvestable biomass estimate**")
         yield_chart = all_results.pivot(index="day", columns="crop", values="harvestable_biomass_g")

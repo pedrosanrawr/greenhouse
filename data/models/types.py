@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
 from datetime import date
+from math import isclose
 from typing import Dict, Tuple
 
-ORGANS = ("leaf", "stem", "root", "flower", "fruit")
+ORGANS = ("leaf", "stem", "root", "flower", "fruit", "root_tuber", "stem_tuber")  # most plants don't have the last 2, so they are 0 in the biomass_ratio
 
 
 @dataclass(frozen=True)
@@ -16,13 +17,98 @@ class CropParameters:
     extinction_k: float
     sla: float
     maintenance: Dict[str, float]
-    sink_demand: Dict[str, float]
+    sink_demand: Dict[str, float]  # no longer read by the engine; see notes
+    # Fraction of new biomass allocated to each organ, per phase (each sums to 1).
+    biomass_ratio: Dict[str, Dict[str, float]]
+    # NEW: day on which each phase starts, e.g. {"vegetative": 0, "flowering": 35}.
+    # Must list the same phases as biomass_ratio, in the same order, strictly ascending.
+    phase_start_days: Dict[str, int]
+    # NEW: potential total dry biomass of one plant at the end of the cycle (g/plant).
+    total_biomass_g: float
     initial_biomass: Dict[str, float]
     harvestable_organ: str
     cycle_min_days: int
     cycle_max_days: int
     first_harvest_min_days: int
     first_harvest_max_days: int
+
+    def __post_init__(self):
+        if not self.biomass_ratio:
+            raise ValueError(f"{self.name}: biomass_ratio needs at least one phase")
+
+        normalized: Dict[str, Dict[str, float]] = {}
+        for phase, ratios in self.biomass_ratio.items():
+            unknown = set(ratios) - set(ORGANS)
+            if unknown:
+                raise ValueError(
+                    f"{self.name}/{phase}: unknown organ(s) {sorted(unknown)}; "
+                    f"allowed: {ORGANS}"
+                )
+            bad = {o: v for o, v in ratios.items() if not 0.0 <= v <= 1.0}
+            if bad:
+                raise ValueError(f"{self.name}/{phase}: ratios must be in [0, 1], got {bad}")
+            total = sum(ratios.values())
+            if not isclose(total, 1.0, abs_tol=1e-6):
+                raise ValueError(f"{self.name}/{phase}: ratios sum to {total:.4f}, expected 1.0")
+            normalized[phase] = {o: float(ratios.get(o, 0.0)) for o in ORGANS}
+        object.__setattr__(self, "biomass_ratio", normalized)
+
+        # ---- phase thresholds
+        if set(self.phase_start_days) != set(normalized):
+            raise ValueError(
+                f"{self.name}: phase_start_days phases {sorted(self.phase_start_days)} "
+                f"must match biomass_ratio phases {sorted(normalized)}"
+            )
+        starts = [self.phase_start_days[p] for p in normalized]  # biomass_ratio order
+        if starts[0] != 0:
+            raise ValueError(f"{self.name}: first phase must start on day 0, got {starts[0]}")
+        if any(b <= a for a, b in zip(starts, starts[1:])):
+            raise ValueError(
+                f"{self.name}: phase_start_days must be strictly ascending in the same "
+                f"order as biomass_ratio, got {dict(zip(normalized, starts))}"
+            )
+        if starts[-1] >= self.cycle_max_days:
+            raise ValueError(
+                f"{self.name}: last phase starts on day {starts[-1]}, "
+                f"which is not before cycle_max_days={self.cycle_max_days}"
+            )
+
+        # ---- total biomass
+        if self.total_biomass_g <= sum(self.initial_biomass.values()):
+            raise ValueError(f"{self.name}: total_biomass_g must exceed initial biomass")
+
+    @property
+    def phases(self) -> Tuple[str, ...]:
+        return tuple(self.biomass_ratio)
+
+    def ratio_for(self, phase: str) -> Dict[str, float]:
+        try:
+            return self.biomass_ratio[phase]
+        except KeyError:
+            raise KeyError(
+                f"{self.name} has no biomass_ratio for phase '{phase}'. "
+                f"Defined phases: {self.phases}"
+            ) from None
+
+    def phase_for_day(self, day: int) -> str:
+        """Phase active on a given day (0-based): the last phase whose start <= day."""
+        if day < 0:
+            raise ValueError("day must be >= 0")
+        current = self.phases[0]
+        for phase in self.phases:
+            if day >= self.phase_start_days[phase]:
+                current = phase
+        return current
+
+    @property
+    def growth_days(self) -> int:
+        """Days over which total_biomass_g is accumulated."""
+        return self.cycle_max_days
+
+    @property
+    def potential_daily_growth_g(self) -> float:
+        """Flat daily biomass potential for one plant (g/day). Gradient can replace this later."""
+        return (self.total_biomass_g - sum(self.initial_biomass.values())) / self.growth_days
 
 @dataclass(frozen=True)
 class GreenhouseConfig:
