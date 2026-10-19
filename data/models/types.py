@@ -120,6 +120,7 @@ class GreenhouseConfig:
     water_factor: float = 1.0
     nutrient_factor: float = 1.0
     start_date: date | None = None
+    cover_par_transmittance: float = 0.86
 
 @dataclass(frozen=True)
 class EnvironmentConditions:
@@ -128,6 +129,9 @@ class EnvironmentConditions:
     irradiance_ppfd: float
     airflow_m_s: float
 
+    # Daily weather and greenhouse-cover data for the light model.
+    solar_radiation_mj_m2_day: float
+    cover_par_transmittance: float
 
 @dataclass(frozen=True)
 class ResourceAvailability:

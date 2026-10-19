@@ -21,7 +21,7 @@ from typing import Dict
 
 import pandas as pd
 
-from data.models.environment import ConstantEnvironmentModel
+from data.models.environment import NASAEnvironmentModel
 from data.models.types import CropParameters, CropState, GreenhouseConfig, ORGANS
 from data.plants.base import CropDefinition
 
@@ -78,7 +78,7 @@ def run_simulation(
         raise ValueError("days must be at least 1")
 
     start_date = start_date or greenhouse.start_date or date.today()
-    environment_model = environment_model or ConstantEnvironmentModel()
+    environment_model = environment_model or NASAEnvironmentModel()
     params = crop.parameters
     growth_model = crop.growth_model
     soil_model = crop.soil_model

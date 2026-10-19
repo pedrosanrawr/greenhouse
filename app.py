@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 
+from datetime import date, timedelta
 from data.models.types import GreenhouseConfig
 from data.plants import CROPS
 from simulation.engine import run_simulation
@@ -15,6 +16,10 @@ ORGAN_COLUMNS = {
     "stem_tuber_biomass_g": "Stem tuber",
 }
 st.set_page_config(page_title="Greenhouse Simulator", page_icon="🌱", layout="wide")
+WEATHER_START_DATE = date(2001, 1, 1)
+WEATHER_END_DATE = date(2025, 12, 31)
+DEFAULT_START_DATE = WEATHER_START_DATE
+DEFAULT_SIMULATION_DAYS = 120
 
 st.sidebar.title("Greenhouse Simulator")
 st.sidebar.subheader("Simulation")
@@ -50,8 +55,59 @@ with st.sidebar.expander("Greenhouse conditions", expanded=True):
     airflow = st.slider("Airflow (m/s)", 0.0, 5.0, defaults["airflow"], 0.1)
     water_factor = st.slider("Water availability factor", 0.0, 1.0, 1.0, 0.05)
     nutrient_factor = st.slider("Nutrient availability factor", 0.0, 1.0, 1.0, 0.05)
-    start_date = st.date_input("Starting date")
-    simulation_days = st.slider("Simulation duration (days)", 30, 180, 120, 10)
+
+    simulation_days = st.slider(
+        "Simulation duration (days)",
+        min_value=30,
+        max_value=180,
+        value=DEFAULT_SIMULATION_DAYS,
+        step=10,
+    )
+
+    # Ensure the complete simulation fits within the weather archive.
+    latest_start_date = WEATHER_END_DATE - timedelta(
+        days=simulation_days - 1
+    )
+
+    # Default to the first date in the NASA dataset.
+    if "start_date" not in st.session_state:
+        st.session_state["start_date"] = DEFAULT_START_DATE
+
+    # Keep the selected date within the permitted range.
+    if st.session_state["start_date"] < WEATHER_START_DATE:
+        st.session_state["start_date"] = WEATHER_START_DATE
+
+    if st.session_state["start_date"] > latest_start_date:
+        st.session_state["start_date"] = latest_start_date
+
+    start_date = st.date_input(
+        "Starting date",
+        min_value=WEATHER_START_DATE,
+        max_value=latest_start_date,
+        key="start_date",
+    )
+
+    # The entire simulation must fit inside the NASA archive.
+    latest_start_date = WEATHER_END_DATE - timedelta(
+        days=simulation_days - 1
+    )
+
+    # Set a valid initial date and clamp saved selections to the valid range.
+    if "simulation_start_date" not in st.session_state:
+        st.session_state["simulation_start_date"] = DEFAULT_START_DATE
+
+    if st.session_state["simulation_start_date"] < WEATHER_START_DATE:
+        st.session_state["simulation_start_date"] = WEATHER_START_DATE
+
+    if st.session_state["simulation_start_date"] > latest_start_date:
+        st.session_state["simulation_start_date"] = latest_start_date
+
+    start_date = st.date_input(
+        "Starting date",
+        min_value=WEATHER_START_DATE,
+        max_value=latest_start_date,
+        key="simulation_start_date",
+    )
 
 greenhouse = GreenhouseConfig(
     temperature_c=temperature,
