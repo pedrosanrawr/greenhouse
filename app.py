@@ -20,6 +20,8 @@ WEATHER_START_DATE = date(2001, 1, 1)
 WEATHER_END_DATE = date(2025, 12, 31)
 DEFAULT_START_DATE = WEATHER_START_DATE
 DEFAULT_SIMULATION_DAYS = 120
+COVER_TYPE = "Polyethylene film, single layer"
+COVER_PAR_TRANSMITTANCE = 0.860
 
 st.sidebar.title("Greenhouse Simulator")
 st.sidebar.subheader("Simulation")
@@ -38,20 +40,17 @@ preset_name = st.sidebar.selectbox(
     "Preset",
     ["Custom", "Temperate greenhouse", "Warm greenhouse", "Cool greenhouse"],
 )
+
 preset_values = {
-    "Custom": {"temperature": 24.0, "light_hours": 16.0, "irradiance": 250.0, "airflow": 0.5},
-    "Temperate greenhouse": {"temperature": 22.0, "light_hours": 16.0, "irradiance": 250.0, "airflow": 0.5},
-    "Warm greenhouse": {"temperature": 28.0, "light_hours": 16.0, "irradiance": 300.0, "airflow": 0.6},
-    "Cool greenhouse": {"temperature": 18.0, "light_hours": 14.0, "irradiance": 200.0, "airflow": 0.4},
+    "Custom": {"temperature": 24.0, "airflow": 0.5},
+    "Temperate greenhouse": {"temperature": 22.0, "airflow": 0.5},
+    "Warm greenhouse": {"temperature": 28.0, "airflow": 0.6},
+    "Cool greenhouse": {"temperature": 18.0, "airflow": 0.4},
 }
 defaults = preset_values[preset_name]
 
 with st.sidebar.expander("Greenhouse conditions", expanded=True):
     temperature = st.number_input("Temperature (°C)", 0.0, 50.0, defaults["temperature"], 0.5)
-    light_hours = st.slider("Light period (hours/day)", 0.0, 24.0, defaults["light_hours"], 0.5)
-    irradiance = st.number_input(
-        "Light irradiance / PPFD (µmol/m²/s)", 0.0, 2500.0, defaults["irradiance"], 10.0
-    )
     airflow = st.slider("Airflow (m/s)", 0.0, 5.0, defaults["airflow"], 0.1)
     water_factor = st.slider("Water availability factor", 0.0, 1.0, 1.0, 0.05)
     nutrient_factor = st.slider("Nutrient availability factor", 0.0, 1.0, 1.0, 0.05)
@@ -102,21 +101,15 @@ with st.sidebar.expander("Greenhouse conditions", expanded=True):
     if st.session_state["simulation_start_date"] > latest_start_date:
         st.session_state["simulation_start_date"] = latest_start_date
 
-    start_date = st.date_input(
-        "Starting date",
-        min_value=WEATHER_START_DATE,
-        max_value=latest_start_date,
-        key="simulation_start_date",
-    )
-
 greenhouse = GreenhouseConfig(
     temperature_c=temperature,
-    light_hours=light_hours,
-    irradiance_ppfd=irradiance,
+    light_hours=16.0,  # Legacy field; not used by the historical light calculation
+    irradiance_ppfd=250.0,  # Legacy field; not used by the historical light calculation
     airflow_m_s=airflow,
     water_factor=water_factor,
     nutrient_factor=nutrient_factor,
     start_date=start_date,
+    cover_par_transmittance=COVER_PAR_TRANSMITTANCE,
 )
 
 st.title("Greenhouse Simulation")
@@ -132,9 +125,16 @@ overview_tab, charts_tab, details_tab = st.tabs(["Overview", "Charts", "Daily da
 with overview_tab:
     st.subheader("Simulation setup")
     col1, col2, col3 = st.columns(3)
+
     col1.metric("Selected crops", len(selected_crops))
     col2.metric("Temperature", f"{temperature:.1f} °C")
-    col3.metric("Light period", f"{light_hours:g} hours/day")
+    col3.metric("Greenhouse cover", "Single-layer PE")
+
+    st.write(f"**Cover material:** {COVER_TYPE}")
+    st.write(
+        f"**Cover PAR transmittance:** "
+        f"{COVER_PAR_TRANSMITTANCE:.0%}"
+    )
     st.write("**Crops:** " + (", ".join(selected_crops) if selected_crops else "None selected"))
     st.write(f"**Greenhouse preset:** {preset_name}")
     st.write(f"**Start date:** {start_date.isoformat()}")
