@@ -93,62 +93,63 @@ For academic use. License to be determined.
 
 ## TBD
 1. Core biomass and carbon accounting
-    [] Define biomass and assimilation units
-    [] Establish carbon/accounting rules
-    [] Correct maintenance respiration
-    [] Define reserve behavior
-    [] Define biomass and senscence
-    [] Prevent impossible states
+    - [ ] Define biomass and assimilation units - Confirm the units of light-use efficiency (LUE), intercepted PAR, plant area, and biomass. In particular, check that plant area is not inadvertently counted twice.
+        - [ ] LUE units are 
+    - [ ] Establish carbon/accounting rules - Define how gross assimilation, respiration, growth, reserves, and losses relate each day.
+    - [ ] Correct maintenance respiration - Decide whether respiration is deducted from current assimilates, existing biomass, or both under explicitly defined rules.
+    - [ ] Define reserve behavior - Determine how unused assimilates are stored, depleted, and made available for later growth.
+    - [ ] Define biomass and senscence - Specify how dying leaves and other lost tissue affect living biomass and whether lost biomass is tracked separately.
+    - [ ] Prevent impossible states - Biomass and reserves must not become negative, and growth must not appear when the required assimilates are unavailable
 
 2. Make greenhouse controls affect the simulation
-    [] Temperature response
-    [] Light input
-    [] Nutrient limitation
-    [] Ariflow
-    [] Plant area and density 
-    [] Input Validation
+    - [ ] Temperature response
+    - [ ] Light input
+    - [ ] Nutrient limitation - connect soil nitrogen or nutrient availability to plant growth using explicit assumptions about nitrogen demand and uptake. 
+    - [ ] Ariflow - confirm how airflow affects the plant growth in an enclosed greenhouse
+    - [ ] Plant area and density 
+    - [ ] Input Validation
 
 3. Build automated test suites
-    [] Zero-light test
-    [] Temperature boundary tests
-    [] Limitation tests
-    [] Biomass conesrvation tests
-    [] Numerical Stability tests
-    [] Repeatability tests
-    [] INterface Integration Tests
+    - [ ] Zero-light test
+    - [ ] Temperature boundary tests
+    - [ ] Limitation tests
+    - [ ] Biomass conesrvation tests
+    - [ ] Numerical Stability tests
+    - [ ] Repeatability tests
+    - [ ] INterface Integration Tests
 
 4. Improve plant development and source-sink dynamics
-    [] Define development stages
-    [] Link development to time and environmnet
-    [] Improve organ sink demand
-    [] Define allocation rules
-    [] Improve fruit set and filling
-    [] Improve leaf area dynamics
-    [] Establis yield accounting
+    - [ ] Define development stages
+    - [ ] Link development to time and environmnet
+    - [ ] Improve organ sink demand
+    - [ ] Define allocation rules
+    - [ ] Improve fruit set and filling
+    - [ ] Improve leaf area dynamics
+    - [ ] Establis yield accounting
 
 5. Improve the streamlit results and diagnostic
-    [] Organ biomass over time
-    [] Total versus harvestable biomass
-    [] Growth rate
-    [] Source-sink diagnostics
-    [] Environmental diagnostics
-    [] Simulation Summary
+    - [ ] Organ biomass over time
+    - [ ] Total versus harvestable biomass
+    - [ ] Growth rate
+    - [ ] Source-sink diagnostics
+    - [ ] Environmental diagnostics
+    - [ ] Simulation Summary
 
 6. Validate and calibrate against real tomato data
-    [] Create a parameter register
-    [] Obrain reference data
-    [] Mathc simulation conditions
-    [] Compare model predicitons
-    [] Calibrate selected parameters
-    [] Validate independently
-    [] Document the model's valid scope
+    - [ ] Create a parameter register
+    - [ ] Obrain reference data
+    - [ ] Mathc simulation conditions
+    - [ ] Compare model predicitons
+    - [ ] Calibrate selected parameters
+    - [ ] Validate independently
+    - [ ] Document the model's valid scope
     
 7. IMprove simulation workflow and usability
-    [] INitial conditions
-    [] Run config
-    [] Scenario comparison
-    [] Reproducible exports
-    [] Error handling
+    - [ ] INitial conditions
+    - [ ] Run config
+    - [ ] Scenario comparison
+    - [ ] Reproducible exports
+    - [ ] Error handling
 8. prep for multiple props 
 
 
