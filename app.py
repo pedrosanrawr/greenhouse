@@ -37,6 +37,13 @@ ORGAN_COLUMNS = {
 	"fruit_biomass_g": "Fruit",
 	"root_tuber_biomass_g": "Root tuber",
 	"stem_tuber_biomass_g": "Stem tuber",
+	"leaf_biomass_g_dm_m2": "Leaf",
+	"stem_biomass_g_dm_m2": "Stem",
+	"root_biomass_g_dm_m2": "Root",
+	"flower_biomass_g_dm_m2": "Flower",
+	"fruit_biomass_g_dm_m2": "Fruit",
+	"root_tuber_biomass_g_dm_m2": "Root tuber",
+	"stem_tuber_biomass_g_dm_m2": "Stem tuber",
 }
 
 COLORS = {
@@ -280,15 +287,32 @@ def convert_numeric_columns(df):
 	return df
 
 
-def run_crop_simulation(crop_name, greenhouse, days, start_date):
-	df = run_simulation(
-		CROPS[crop_name],
-		greenhouse,
-		days,
-		start_date,
-	)
+def configure_soil_model(crop, irrigation_l_m2_day, fertilizer_n_g_m2_day):
+	"""Set inputs on the crop's soil model only when it supports those fields."""
+	soil_model = getattr(crop, "soil_model", None)
+	if soil_model is None:
+		return []
 
-	return normalize_results(df, crop_name)
+	configured = []
+	for name, value in (
+		("irrigation_l_m2_day", irrigation_l_m2_day),
+		("fertilizer_n_g_m2_day", fertilizer_n_g_m2_day),
+	):
+		if hasattr(soil_model, name):
+			setattr(soil_model, name, value)
+			configured.append(name)
+	return configured
+
+
+def run_crop_simulation(
+	crop_name, greenhouse, days, start_date, irrigation_l_m2_day, fertilizer_n_g_m2_day
+):
+	crop = CROPS[crop_name]
+	configured_soil_inputs = configure_soil_model(
+		crop, irrigation_l_m2_day, fertilizer_n_g_m2_day
+	)
+	df = run_simulation(crop, greenhouse, days, start_date)
+	return normalize_results(df, crop_name), configured_soil_inputs
 
 
 def add_crop_lines(fig, df, x_column, y_column):
@@ -897,23 +921,26 @@ with st.sidebar:
 			step=0.1,
 		)
 
-	with st.expander("Water and nutrients", expanded=False):
-		water_factor = st.slider(
-			"Water availability factor",
-			min_value=0.0,
-			max_value=1.0,
-			value=defaults["water"],
-			step=0.05,
-			help="A normalized availability factor from 0 to 1.",
+	with st.expander("Soil, water and nutrients", expanded=True):
+		irrigation_l_m2_day = st.number_input(
+			"Irrigation (L/m²/day)", min_value=0.0, max_value=100.0,
+			value=2.0, step=0.5,
+			help="Applied to the crop soil model if it supports irrigation_l_m2_day.",
 		)
-
+		fertilizer_n_g_m2_day = st.number_input(
+			"Fertilizer input (g N/m²/day)", min_value=0.0, max_value=100.0,
+			value=0.0, step=0.1,
+			help="Applied to the crop soil model if it supports fertilizer_n_g_m2_day.",
+		)
+		water_factor = st.slider(
+			"Water availability factor", min_value=0.0, max_value=1.0,
+			value=defaults["water"], step=0.05,
+			help="Normalized water factor passed in GreenhouseConfig.",
+		)
 		nutrient_factor = st.slider(
-			"Nutrient availability factor",
-			min_value=0.0,
-			max_value=1.0,
-			value=defaults["nutrient"],
-			step=0.05,
-			help="A normalized availability factor from 0 to 1.",
+			"Nutrient availability factor", min_value=0.0, max_value=1.0,
+			value=defaults["nutrient"], step=0.05,
+			help="Normalized nutrient factor passed in GreenhouseConfig.",
 		)
 
 	with st.expander("Simulation period", expanded=True):
@@ -952,9 +979,9 @@ with st.sidebar:
 		)
 
 		st.caption(
-			"Light period, irradiance, soil properties and fertilizer "
-			"formulations are not exposed as active controls because "
-			"they are not independently configured by this interface."
+			"Irrigation and fertilizer are applied only when the crop's soil "
+			"model exposes matching attributes. Water and nutrient factors "
+			"are passed through GreenhouseConfig."
 		)
 
 	st.divider()
@@ -1004,15 +1031,27 @@ failed_crops = []
 with st.spinner("Calculating crop growth..."):
 	for crop_name in selected_crops:
 		try:
-			crop_df = run_crop_simulation(
+			crop_df, configured_soil_inputs = run_crop_simulation(
 				crop_name,
 				greenhouse,
 				simulation_days,
 				start_date,
+				irrigation_l_m2_day,
+				fertilizer_n_g_m2_day,
 			)
 
 			if not crop_df.empty:
 				results.append(crop_df)
+				if "irrigation_l_m2_day" not in configured_soil_inputs or "fertilizer_n_g_m2_day" not in configured_soil_inputs:
+					missing = []
+					if "irrigation_l_m2_day" not in configured_soil_inputs:
+						missing.append("irrigation")
+					if "fertilizer_n_g_m2_day" not in configured_soil_inputs:
+						missing.append("fertilizer nitrogen")
+					st.warning(
+						f"{crop_name}: soil model does not expose support for "
+						f"{', '.join(missing)}; those inputs are not applied."
+					)
 			else:
 				failed_crops.append(crop_name)
 
