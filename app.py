@@ -452,7 +452,7 @@ def render_organ_biomass_grid(df, selected_crops):
 	)
 
 	# Two charts per row: six crops produce three rows.
-	chart_columns = 2
+	chart_columns = 3
 
 	for start in range(0, len(selected_crops), chart_columns):
 		crop_group = selected_crops[start:start + chart_columns]
@@ -542,7 +542,7 @@ def render_organ_biomass_grid(df, selected_crops):
 
 					fig.update_layout(
 						**layout,
-						height=max(250, 55 * len(organ_df) + 100),
+						height=300,
 						showlegend=False,
 						xaxis_title="Biomass (model units)",
 						yaxis_title="",
