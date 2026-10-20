@@ -1,6 +1,6 @@
 """Potato baseline configuration and generic model selections."""
 from data.models.generic_growth import GenericCropGrowthModel
-from data.models.generic_soil import GenericSoilFertilizerModel
+from data.models.soil import NutrientApplication, TextureSoilFertilizerModel
 from data.models.generic_yield import GenericYieldModel
 from data.models.types import CropParameters
 from data.plants.base import CropDefinition
@@ -94,6 +94,10 @@ POTATO_PARAMETERS = CropParameters(
 POTATO = CropDefinition(
     parameters=POTATO_PARAMETERS,
     growth_model=GenericCropGrowthModel(),
-    soil_model=GenericSoilFertilizerModel(),
+    soil_model=TextureSoilFertilizerModel(
+            "clay_loam",
+            nutrients=NutrientApplication(100, 60, 60),
+            recommended_npk={"potato": (90.0, 45.0, 45.0)},
+        ),
     yield_model=GenericYieldModel(),
 )
