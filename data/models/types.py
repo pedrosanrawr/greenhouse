@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from math import isclose
 from typing import Dict, Tuple
+from data.models.compatibility import validate_crop_requirements
 
 ORGANS = ("leaf", "stem", "root", "flower", "fruit", "root_tuber", "stem_tuber")  # most plants don't have the last 2, so they are 0 in the biomass_ratio
 
@@ -31,6 +32,13 @@ class CropParameters:
     cycle_max_days: int
     first_harvest_min_days: int
     first_harvest_max_days: int
+    t_abs_min: float | None = None       
+    t_opt_min: float | None = None
+    t_opt_max: float | None = None
+    t_abs_max: float | None = None
+    dli_min: float | None = None         
+    dli_opt: float | None = None
+    temperature_band_verified: bool = False
 
     def __post_init__(self):
         if not self.biomass_ratio:
@@ -76,6 +84,16 @@ class CropParameters:
         # ---- total biomass
         if self.total_biomass_g <= sum(self.initial_biomass.values()):
             raise ValueError(f"{self.name}: total_biomass_g must exceed initial biomass")
+
+        validate_crop_requirements(
+            t_abs_min=self.t_abs_min,
+            t_opt_min=self.t_opt_min,
+            t_opt_max=self.t_opt_max,
+            t_abs_max=self.t_abs_max,
+            dli_min=self.dli_min,
+            dli_opt=self.dli_opt,
+            temperature_band_verified=self.temperature_band_verified,
+        )
 
     @property
     def phases(self) -> Tuple[str, ...]:
