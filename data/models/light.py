@@ -6,6 +6,10 @@ import math
 
 DEFAULT_PAR_FRACTION = 0.45
 
+# ASSUMPTION: approximate conversion for sunlight, in mol of photons per MJ of
+# PAR energy. Used only to report the daily light integral (DLI).
+PAR_MOL_PER_MJ = 4.6
+
 
 @dataclass(frozen=True)
 class LightResult:
@@ -15,6 +19,14 @@ class LightResult:
     lai: float
     intercepted_fraction: float
     ipar_mj_m2_day: float
+
+    @property
+    def dli_mol_par_m2_day(self) -> float:
+        """Daily light integral inside the cover, before canopy interception.
+
+        Identical for every crop in a run, because it ignores the canopy.
+        """
+        return self.inside_par_mj_m2_day * PAR_MOL_PER_MJ
 
 
 def calculate_light(
@@ -72,3 +84,22 @@ def calculate_light(
         intercepted_fraction=intercepted_fraction,
         ipar_mj_m2_day=ipar,
     )
+
+def calculate_dli(
+    solar_radiation_mj_m2_day: float,
+    cover_par_transmittance: float,
+    par_fraction: float = DEFAULT_PAR_FRACTION,
+) -> tuple[float, float]:
+    """Return (inside_par_mj_m2_day, dli_mol_par_m2_day) before canopy interception."""
+    values = (solar_radiation_mj_m2_day, cover_par_transmittance, par_fraction)
+    if not all(math.isfinite(v) for v in values):
+        raise ValueError("Light parameters must be finite.")
+    if solar_radiation_mj_m2_day < 0:
+        raise ValueError("Solar radiation cannot be negative.")
+    if not 0 <= cover_par_transmittance <= 1:
+        raise ValueError("Cover PAR transmittance must be between 0 and 1.")
+    if not 0 <= par_fraction <= 1:
+        raise ValueError("PAR fraction must be between 0 and 1.")
+
+    inside_par = solar_radiation_mj_m2_day * par_fraction * cover_par_transmittance
+    return inside_par, inside_par * PAR_MOL_PER_MJ

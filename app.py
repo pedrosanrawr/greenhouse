@@ -17,6 +17,9 @@ from dashboard.sections.ranking import (
     render_insights,
     render_ranking,
 )
+
+from dashboard.sections.compatibility import render_compatibility
+
 from dashboard.sections.yields import render_yields
 from dashboard.sidebar import render_sidebar
 from dashboard.styles import inject_styles
@@ -47,12 +50,12 @@ render_header(settings, len(crops), outcome.warnings)
 st.caption("🧪 Sections marked with this icon currently show placeholder data.")
 
 # 1. Which crop grows best?
-col_rank, col_heat = st.columns(2)
-with col_rank:
-    render_ranking(ph.scores)
-with col_heat:
-    render_breakdown(ph.components)
-
+# col_rank, col_heat = st.columns(2)
+# with col_rank:
+#     render_ranking(ph.scores)
+# with col_heat:
+#     render_breakdown(ph.components)
+render_compatibility(settings, df)
 # render_insights(ph.scores, ph.yields)
 
 # 2. Yield
