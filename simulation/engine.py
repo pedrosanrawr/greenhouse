@@ -196,6 +196,17 @@ def run_simulation(
             "light_hours": environment.light_hours,
             "irradiance_ppfd": environment.irradiance_ppfd,
             "airflow_m_s": environment.airflow_m_s,
+            "co2_ppm": environment.co2_ppm,
+            "relative_humidity_pct": environment.relative_humidity_pct,
+            "vpd_kpa": flux.vpd_kpa,
+
+            "co2_factor": flux.co2_factor,
+            "vpd_factor": flux.vpd_factor,
+            "airflow_factor": flux.airflow_factor,
+
+            "co2_response_active": flux.co2_response_active,
+            "vpd_response_active": flux.vpd_response_active,
+            "airflow_response_active": flux.airflow_response_active,
         }
         rows.append(row)
 

@@ -87,7 +87,14 @@ ENVIRONMENT_COLUMNS = {
     "Intercepted PAR": ["intercepted_par_mol_m2_day"],
     "Water factor": ["water_factor", "water_availability_factor"],
     "Nutrient factor": ["nitrogen_factor", "nutrient_factor"],
-    "Airflow": ["airflow_m_s", "airflow"],
+    "Airflow": ["airflow_m_s"],
+
+    "CO₂ concentration": ["co2_ppm"],
+    "Relative humidity": ["relative_humidity_pct"],
+    "VPD": ["vpd_kpa"],
+    "CO₂ response factor": ["co2_factor"],
+    "VPD response factor": ["vpd_factor"],
+    "Airflow response factor": ["airflow_factor"],
 }
 
 # Score bands: (label, low, high, color)

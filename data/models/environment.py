@@ -28,6 +28,8 @@ class ConstantEnvironmentModel(EnvironmentModel):
             airflow_m_s=greenhouse.airflow_m_s,
             solar_radiation_mj_m2_day=CONSTANT_SOLAR_TEST_VALUE,
             cover_par_transmittance=greenhouse.cover_par_transmittance,
+            co2_ppm=greenhouse.co2_ppm,
+            relative_humidity_pct=greenhouse.relative_humidity_pct,
         )
 
 
@@ -110,4 +112,6 @@ class NASAEnvironmentModel(EnvironmentModel):
             airflow_m_s=greenhouse.airflow_m_s,
             solar_radiation_mj_m2_day=float(row[SOLAR_COLUMN]),
             cover_par_transmittance=greenhouse.cover_par_transmittance,
+            co2_ppm=greenhouse.co2_ppm,
+            relative_humidity_pct=greenhouse.relative_humidity_pct,        
         )

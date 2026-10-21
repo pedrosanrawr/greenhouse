@@ -26,6 +26,9 @@ class SidebarSettings:
 	nutrient_factor: float
 	simulation_days: int
 	start_date: date
+	co2_ppm: float
+	relative_humidity_pct: float	
+	
 
 
 def render_sidebar() -> SidebarSettings:
@@ -73,12 +76,34 @@ def render_sidebar() -> SidebarSettings:
 				step=0.5,
 			)
 			airflow = st.slider(
-				"Airflow (m/s)",
-				min_value=0.0,
-				max_value=5.0,
-				value=defaults["airflow"],
-				step=0.1,
-			)
+                "Canopy-level airflow (m/s)",
+                min_value=0.0,
+                max_value=1.0,
+                value=defaults["airflow"],
+                step=0.05,
+                help="Approximate air speed around the crop canopy.",
+            )
+
+		with st.expander("CO₂ and humidity", expanded=True):
+			co2_ppm = st.number_input(
+                "CO₂ concentration (ppm)",
+                min_value=200.0,
+                max_value=2000.0,
+                value=426.0,
+                step=25.0,
+                help=(
+                    "Scenario concentration. This is not a live greenhouse "
+                    "measurement."
+                ),
+            )
+
+			relative_humidity_pct = st.slider(
+                "Relative humidity (%)",
+                min_value=0,
+                max_value=100,
+                value=70,
+                step=5,
+            )
 
 		with st.expander("Soil, water and nutrients", expanded=True):
 			irrigation_l_m2_day = st.number_input(
@@ -165,4 +190,6 @@ def render_sidebar() -> SidebarSettings:
 		nutrient_factor=nutrient_factor,
 		simulation_days=simulation_days,
 		start_date=start_date,
+        co2_ppm=co2_ppm,
+        relative_humidity_pct=relative_humidity_pct,		
 	)

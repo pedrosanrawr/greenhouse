@@ -1,4 +1,5 @@
 """Generic crop-growth model using the shared light module."""
+import math
 
 from data.models.contracts import CropGrowthModel
 from data.models.light import calculate_light
@@ -9,6 +10,13 @@ from data.models.types import (
     GrowthFlux,
     ORGANS,
     ResourceAvailability,
+)
+
+from data.models.air import (
+    airflow_response_factor,
+    calculate_air_diagnostics,
+    co2_response_factor,
+    vpd_response_factor,
 )
 
 # Provisional assumptions retained from the existing growth model.
@@ -89,6 +97,45 @@ class GenericCropGrowthModel(CropGrowthModel):
             crop.t_max,
         )
 
+        # Atmospheric diagnostics
+        air = calculate_air_diagnostics(
+            temperature_c=environment.temperature_c,
+            co2_ppm=environment.co2_ppm,
+            relative_humidity_pct=environment.relative_humidity_pct,
+            airflow_m_s=environment.airflow_m_s,
+        )
+
+        # CO2: inactive unless a crop-specific parameter is supplied.
+        co2_active = crop.co2_k_half_ppm is not None
+
+        f_co2 = (
+            co2_response_factor(
+                co2_ppm=air.co2_ppm,
+                k_half_ppm=crop.co2_k_half_ppm,
+            )
+            if co2_active
+            else 1.0
+        )
+
+        # VPD: inactive unless all crop-specific thresholds are supplied.
+        vpd_active = crop.vpd_low_kpa is not None
+
+        f_vpd = vpd_response_factor(
+            vpd_kpa=air.vpd_kpa,
+            low_kpa=crop.vpd_low_kpa,
+            high_kpa=crop.vpd_high_kpa,
+            min_factor=crop.vpd_min_factor,
+        )
+
+        # Airflow: inactive unless its crop-specific parameters are supplied.
+        airflow_active = crop.airflow_sensitivity is not None
+
+        f_airflow = airflow_response_factor(
+            airflow_m_s=air.airflow_m_s,
+            sensitivity=crop.airflow_sensitivity,
+            half_saturation_m_s=crop.airflow_half_saturation_m_s,
+        )
+
         # Water and nutrient limitation.
         water_factor = max(
             0.0,
@@ -109,6 +156,9 @@ class GenericCropGrowthModel(CropGrowthModel):
             * area
             * f_temp
             * f_environment
+            * f_co2
+            * f_vpd
+            * f_airflow
         )
 
         # Existing provisional maintenance-respiration model.
@@ -218,4 +268,11 @@ class GenericCropGrowthModel(CropGrowthModel):
             temperature_factor=f_temp,
             environment_factor=f_environment,
             maintenance_deficit_g_day=maintenance_deficit,
+            vpd_kpa=air.vpd_kpa,
+            co2_factor=f_co2,
+            vpd_factor=f_vpd,
+            airflow_factor=f_airflow,
+            co2_response_active=co2_active,
+            vpd_response_active=vpd_active,
+            airflow_response_active=airflow_active,
         )
