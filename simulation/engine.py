@@ -18,6 +18,7 @@ It also enforces the "no impossible states" rules:
 import math
 from datetime import date, timedelta
 from typing import Dict
+from data.models.light import calculate_dli
 
 import pandas as pd
 
@@ -93,6 +94,10 @@ def run_simulation(
 
     for day_index in range(days):
         environment = environment_model.conditions_for_day(greenhouse, day_index)
+        inside_par_mj, dli_mol = calculate_dli(
+            environment.solar_radiation_mj_m2_day,
+            greenhouse.cover_par_transmittance,
+        )
         resources = soil_model.resources_for_day(params, greenhouse, day_index)
         flux = growth_model.calculate_growth(params, state, environment, resources)
 
@@ -207,6 +212,8 @@ def run_simulation(
             "co2_response_active": flux.co2_response_active,
             "vpd_response_active": flux.vpd_response_active,
             "airflow_response_active": flux.airflow_response_active,
+            "inside_par_mj_m2_day": inside_par_mj,
+            "dli_mol_par_m2_day": dli_mol,
         }
         rows.append(row)
 
