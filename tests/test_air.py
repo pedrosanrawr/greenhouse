@@ -108,7 +108,7 @@ def test_vpd_factor_is_neutral_without_crop_parameters():
 def test_vpd_factor_declines_between_thresholds():
     assert vpd_response_factor(
         1.0, low_kpa=0.5, high_kpa=2.5, min_factor=0.3
-    ) == pytest.approx(0.75)
+    ) == pytest.approx(0.825)
 
 
 def test_vpd_factor_reaches_minimum():

@@ -67,21 +67,31 @@ def render_sidebar() -> SidebarSettings:
 		)
 		defaults = GREENHOUSE_PRESETS[preset_name]
 
+
 		with st.expander("Temperature and airflow", expanded=True):
 			temperature = st.slider(
-				"Temperature (°C)",
-				min_value=0.0,
-				max_value=50.0,
-				value=defaults["temperature"],
-				step=0.5,
-			)
+                "Temperature (°C)",
+                min_value=0.0,
+                max_value=50.0,
+                value=defaults["temperature"],
+                step=0.5,
+                help="Configured greenhouse air temperature for this simulation.",
+            )
+			st.caption(
+                "Temperature is held constant during the simulation; "
+                "daily indoor temperature is not calculated from weather."
+            )
+
 			airflow = st.slider(
                 "Canopy-level airflow (m/s)",
                 min_value=0.0,
                 max_value=1.0,
                 value=defaults["airflow"],
                 step=0.05,
-                help="Approximate air speed around the crop canopy.",
+                help="Approximate air speed around the crop canopy, not a live measurement.",
+            )
+			st.caption(
+                "This is a scenario input representing air movement around the crops."
             )
 
 		with st.expander("CO₂ and humidity", expanded=True):
@@ -91,11 +101,9 @@ def render_sidebar() -> SidebarSettings:
                 max_value=2000.0,
                 value=426.0,
                 step=25.0,
-                help=(
-                    "Scenario concentration. This is not a live greenhouse "
-                    "measurement."
-                ),
+                help="Scenario CO₂ concentration; this is not a live greenhouse measurement.",
             )
+			st.caption("CO₂ is a configured scenario value, not a sensor reading.")
 
 			relative_humidity_pct = st.slider(
                 "Relative humidity (%)",
@@ -103,7 +111,12 @@ def render_sidebar() -> SidebarSettings:
                 max_value=100,
                 value=70,
                 step=5,
+                help="Scenario relative humidity used to calculate vapor-pressure deficit (VPD).",
             )
+			st.caption(
+                "Relative humidity stays constant during the simulation."
+            )
+
 
 		with st.expander("Soil, water and nutrients", expanded=True):
 			irrigation_l_m2_day = st.number_input(
