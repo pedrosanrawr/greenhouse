@@ -99,6 +99,8 @@ def build_greenhouse(s: "SidebarSettings") -> GreenhouseConfig:
         nutrient_factor=s.nutrient_factor,
         start_date=s.start_date,
         cover_par_transmittance=COVER_PAR_TRANSMITTANCE,
+        co2_ppm=s.co2_ppm,
+        relative_humidity_pct=s.relative_humidity_pct,
     )
 
 
@@ -131,6 +133,25 @@ def run_all_crops(s: "SidebarSettings") -> SimulationOutcome:
             warnings.append(
                 f"{crop_name}: soil model does not expose support for "
                 f"{', '.join(missing)}; those inputs are not applied."
+            )
+        params = CROPS[crop_name].parameters
+        
+        inactive = []
+
+        if params.co2_k_half_ppm is None:
+            inactive.append("CO2")
+
+        if params.vpd_low_kpa is None:
+            inactive.append("VPD")
+
+        if params.airflow_sensitivity is None:
+            inactive.append("airflow")
+
+        if inactive:
+            warnings.append(
+                f"{crop_name}: {', '.join(inactive)} response(s) are "
+                "inactive because crop-specific parameters are not configured. "
+                "Their response factors remain neutral."
             )
 
     if not frames:

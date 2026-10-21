@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from math import isclose
 from typing import Dict, Tuple
+from math import isclose, isfinite
 from data.models.compatibility import validate_crop_requirements
 
 ORGANS = ("leaf", "stem", "root", "flower", "fruit", "root_tuber", "stem_tuber")  # most plants don't have the last 2, so they are 0 in the biomass_ratio
@@ -39,6 +40,18 @@ class CropParameters:
     dli_min: float | None = None         
     dli_opt: float | None = None
     temperature_band_verified: bool = False
+
+    # REMINDER
+    # Optional crop-specific atmospheric response parameters.
+    # Keep None until suitable values are sourced or calibrated.
+    co2_k_half_ppm: float | None = None
+
+    vpd_low_kpa: float | None = None
+    vpd_high_kpa: float | None = None
+    vpd_min_factor: float | None = None
+
+    airflow_sensitivity: float | None = None
+    airflow_half_saturation_m_s: float | None = None
 
     def __post_init__(self):
         if not self.biomass_ratio:
@@ -84,6 +97,70 @@ class CropParameters:
         # ---- total biomass
         if self.total_biomass_g <= sum(self.initial_biomass.values()):
             raise ValueError(f"{self.name}: total_biomass_g must exceed initial biomass")
+
+        # ---- Optional CO2 response parameter
+        if self.co2_k_half_ppm is not None:
+            if (
+                not isfinite(self.co2_k_half_ppm)
+                or self.co2_k_half_ppm <= 0.0
+            ):
+                raise ValueError(
+                    f"{self.name}: co2_k_half_ppm must be finite and positive"
+                )
+
+        # ---- Optional VPD response parameters
+        vpd_parameters = (
+            self.vpd_low_kpa,
+            self.vpd_high_kpa,
+            self.vpd_min_factor,
+        )
+
+        if any(v is not None for v in vpd_parameters):
+            if not all(v is not None for v in vpd_parameters):
+                raise ValueError(
+                    f"{self.name}: all VPD response parameters must be supplied together"
+                )
+
+            low, high, minimum = vpd_parameters
+
+            if not all(isfinite(v) for v in vpd_parameters):
+                raise ValueError(
+                    f"{self.name}: VPD parameters must be finite"
+                )
+
+            if low < 0.0 or high <= low:
+                raise ValueError(
+                    f"{self.name}: VPD limits must satisfy 0 <= low < high"
+                )
+
+            if not 0.0 <= minimum <= 1.0:
+                raise ValueError(
+                    f"{self.name}: VPD minimum factor must be between 0 and 1"
+                )
+
+        # ---- Optional airflow response parameters
+        airflow_parameters = (
+            self.airflow_sensitivity,
+            self.airflow_half_saturation_m_s,
+        )
+
+        if any(v is not None for v in airflow_parameters):
+            if not all(v is not None for v in airflow_parameters):
+                raise ValueError(
+                    f"{self.name}: both airflow parameters must be supplied together"
+                )
+
+            sensitivity, half_saturation = airflow_parameters
+
+            if (
+                not isfinite(sensitivity)
+                or not isfinite(half_saturation)
+                or sensitivity < 0.0
+                or half_saturation <= 0.0
+            ):
+                raise ValueError(
+                    f"{self.name}: invalid airflow response parameters"
+                )
 
         validate_crop_requirements(
             t_abs_min=self.t_abs_min,
@@ -139,6 +216,8 @@ class GreenhouseConfig:
     nutrient_factor: float = 1.0
     start_date: date | None = None
     cover_par_transmittance: float = 0.86
+    co2_ppm: float = 426.0
+    relative_humidity_pct: float = 70.0    
 
 @dataclass(frozen=True)
 class EnvironmentConditions:
@@ -150,6 +229,9 @@ class EnvironmentConditions:
     # Daily weather and greenhouse-cover data for the light model.
     solar_radiation_mj_m2_day: float
     cover_par_transmittance: float
+
+    co2_ppm: float = 426.0
+    relative_humidity_pct: float = 70.0    
 
 @dataclass(frozen=True)
 class ResourceAvailability:
@@ -179,6 +261,17 @@ class GrowthFlux:
     temperature_factor: float
     environment_factor: float
     maintenance_deficit_g_day: float = 0.0
+
+    # Atmospheric diagnostics and response factors
+    vpd_kpa: float = 0.0
+
+    co2_factor: float = 1.0
+    vpd_factor: float = 1.0
+    airflow_factor: float = 1.0
+
+    co2_response_active: bool = False
+    vpd_response_active: bool = False
+    airflow_response_active: bool = False
 
 
 @dataclass(frozen=True)
