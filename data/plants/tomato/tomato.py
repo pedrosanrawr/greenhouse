@@ -4,6 +4,7 @@ from data.models.soil import NutrientApplication, TextureSoilFertilizerModel
 from data.models.generic_yield import GenericYieldModel
 from data.models.types import CropParameters
 from data.plants.base import CropDefinition
+from data.plants.tomato.tomato_yield import TomatoYieldModel
 
 # Temperature boundaries and broad timing ranges are based on the supplied
 # greenhouse crop spreadsheet. The 24 C optimum is a TEST VALUE midpoint.
@@ -23,6 +24,16 @@ TOMATO_PARAMETERS = CropParameters(
     lue=2.5,  # TEST VALUE
     extinction_k=0.7,  # TEST VALUE
     sla=0.03,  # TEST VALUE, m²/g
+    water_abs_min_mm=300,   # DUMMY test value, not sourced
+    water_opt_min_mm=400,   # DUMMY
+    water_opt_max_mm=600,   # DUMMY
+    water_abs_max_mm=900,   # DUMMY
+    water_cycle_days=100,   # DUMMY
+    water_band_verified=True,
+    n_rec_min_kg_ha=100, n_rec_max_kg_ha=150, n_excess_kg_ha=300,        # DUMMY
+    p2o5_rec_min_kg_ha=50, p2o5_rec_max_kg_ha=80,                        # DUMMY
+    k2o_rec_min_kg_ha=60, k2o_rec_max_kg_ha=100,                         # DUMMY
+    nutrient_rates_verified=True,
     maintenance={
         "leaf": 0.010,  # TEST VALUE
         "stem": 0.003,  # TEST VALUE
@@ -90,5 +101,5 @@ TOMATO = CropDefinition(
         nutrients=NutrientApplication(100, 60, 60),
         recommended_npk={"tomato": (90.0, 45.0, 45.0)},
     ),
-    yield_model=GenericYieldModel(),
+    yield_model=TomatoYieldModel(),
 )

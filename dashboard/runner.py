@@ -1,10 +1,18 @@
+import copy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import pandas as pd
 
 from dashboard.config import COVER_PAR_TRANSMITTANCE
+from data.models.compatibility import nutrient_rates
+from data.models.soil import IrrigationSchedule, NutrientApplication
 from data.models.types import GreenhouseConfig
+from data.models.water_budget import (
+    WaterAllocation,
+    allocate_water_budget,
+    water_requirement_mm_day,
+)
 from data.plants import CROPS
 from simulation.engine import run_simulation
 
@@ -17,6 +25,7 @@ class SimulationOutcome:
     results: pd.DataFrame
     warnings: list = field(default_factory=list)
     errors: list = field(default_factory=list)
+    water_allocation: WaterAllocation | None = None
 
 
 def normalize_results(df, crop_name):
@@ -61,46 +70,50 @@ def convert_numeric_columns(df):
     return df
 
 
-def configure_soil_model(crop, irrigation_l_m2_day, fertilizer_n_g_m2_day):
-    """Set inputs on the crop's soil model only when it supports those fields."""
-    soil_model = getattr(crop, "soil_model", None)
-    if soil_model is None:
-        return []
+def configure_soil_model(crop, water_mm_day, requirement_mm_day, npk_kg_ha):
+    """Apply the water supply and fertilizer to this crop's soil model.
 
-    configured = []
-    for name, value in (
-        ("irrigation_l_m2_day", irrigation_l_m2_day),
-        ("fertilizer_n_g_m2_day", fertilizer_n_g_m2_day),
-    ):
-        if hasattr(soil_model, name):
-            setattr(soil_model, name, value)
-            configured.append(name)
-    return configured
+    `crop` must be a private copy, so the shared CROPS objects are never
+    changed. Returns a list of warning messages (empty when all was applied).
+    """
+    soil = getattr(crop, "soil_model", None)
+    if not (hasattr(soil, "water_balance") and hasattr(soil, "nutrient_pools")):
+        return [
+            "the soil model has no water balance or nutrient pools, so the "
+            "water budget and fertilizer inputs are not applied."
+        ]
 
-
-def run_crop_simulation(
-    crop_name, greenhouse, days, start_date, irrigation_l_m2_day, fertilizer_n_g_m2_day
-):
-    crop = CROPS[crop_name]
-    configured_soil_inputs = configure_soil_model(
-        crop, irrigation_l_m2_day, fertilizer_n_g_m2_day
+    # One irrigation event per day delivering this crop's share of the budget.
+    soil.water_balance.irrigation = IrrigationSchedule(
+        interval_days=1, amount_mm=water_mm_day
     )
-    df = run_simulation(crop, greenhouse, days, start_date)
-    return normalize_results(df, crop_name), configured_soil_inputs
+    soil.nutrient_pools.application = NutrientApplication(*npk_kg_ha)
+
+    # Let the dataset drive the simulated demand when it has verified values.
+    ledger = getattr(soil, "demand_ledger", None)
+    if ledger is not None:
+        if requirement_mm_day is not None:
+            ledger.reference_demand_mm_day = requirement_mm_day
+        rates = nutrient_rates(crop.parameters)
+        if rates is not None and hasattr(ledger, "set_recommended"):
+            midpoints = tuple((low + high) / 2 for low, high, _ in rates.values())
+            ledger.set_recommended(crop.parameters.name, midpoints)
+
+    return []
 
 
 def build_greenhouse(s: "SidebarSettings") -> GreenhouseConfig:
+    # water_factor and nutrient_factor keep their default of 1.0: the soil
+    # model now calculates them from the water budget and fertilizer.
     return GreenhouseConfig(
         temperature_c=s.temperature,
         light_hours=16.0,
         irradiance_ppfd=250.0,
         airflow_m_s=s.airflow,
-        water_factor=s.water_factor,
-        nutrient_factor=s.nutrient_factor,
-        start_date=s.start_date,
-        cover_par_transmittance=COVER_PAR_TRANSMITTANCE,
         co2_ppm=s.co2_ppm,
         relative_humidity_pct=s.relative_humidity_pct,
+        start_date=s.start_date,
+        cover_par_transmittance=COVER_PAR_TRANSMITTANCE,
     )
 
 
@@ -108,55 +121,43 @@ def run_all_crops(s: "SidebarSettings") -> SimulationOutcome:
     greenhouse = build_greenhouse(s)
     frames, warnings, errors = [], [], []
 
+    requirements = {
+        name: water_requirement_mm_day(CROPS[name].parameters)
+        for name in s.selected_crops
+    }
+    allocation = allocate_water_budget(s.water_budget_mm_day, requirements)
+
     for crop_name in s.selected_crops:
         try:
-            df, configured = run_crop_simulation(
-                crop_name, greenhouse, s.simulation_days, s.start_date,
-                s.irrigation_l_m2_day, s.fertilizer_n_g_m2_day,
+            # Work on a copy: configuring the soil model changes its state.
+            crop = copy.deepcopy(CROPS[crop_name])
+            problems = configure_soil_model(
+                crop,
+                allocation.supply_mm_day[crop_name],
+                requirements[crop_name],
+                s.fertilizer_npk,
+            )
+            df = normalize_results(
+                run_simulation(crop, greenhouse, s.simulation_days, s.start_date),
+                crop_name,
             )
         except Exception as exc:
             errors.append(f"Could not simulate {crop_name}: {exc}")
             continue
 
         if df.empty:
-            warnings.append(f"No usable simulation results were returned for {crop_name}.")
+            warnings.append(
+                f"No usable simulation results were returned for {crop_name}."
+            )
             continue
 
         frames.append(df)
-        missing = [
-            label for attr, label in (
-                ("irrigation_l_m2_day", "irrigation"),
-                ("fertilizer_n_g_m2_day", "fertilizer nitrogen"),
-            ) if attr not in configured
-        ]
-        if missing:
-            warnings.append(
-                f"{crop_name}: soil model does not expose support for "
-                f"{', '.join(missing)}; those inputs are not applied."
-            )
-        params = CROPS[crop_name].parameters
-        
-        inactive = []
-
-        if params.co2_k_half_ppm is None:
-            inactive.append("CO2")
-
-        if params.vpd_low_kpa is None:
-            inactive.append("VPD")
-
-        if params.airflow_sensitivity is None:
-            inactive.append("airflow")
-
-        if inactive:
-            warnings.append(
-                f"{crop_name}: {', '.join(inactive)} response(s) are "
-                "inactive because crop-specific parameters are not configured. "
-                "Their response factors remain neutral."
-            )
+        for problem in problems:
+            warnings.append(f"{crop_name}: {problem}")
 
     if not frames:
-        return SimulationOutcome(pd.DataFrame(), warnings, errors)
+        return SimulationOutcome(pd.DataFrame(), warnings, errors, allocation)
 
     all_results = convert_numeric_columns(pd.concat(frames, ignore_index=True))
     all_results = all_results.sort_values(["crop", "day"]).reset_index(drop=True)
-    return SimulationOutcome(all_results, warnings, errors)
+    return SimulationOutcome(all_results, warnings, errors, allocation)

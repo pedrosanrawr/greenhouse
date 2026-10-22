@@ -255,9 +255,13 @@ class WaterBalance:
         self._cum["drained_mm"] += drained
         return WaterFlux(uptake, drained, self.field_capacity_mm)
 
-    def factor(self) -> float:
+    def factor(self, demand_mm: float | None = None) -> float:
         if self.taw_mm <= 0.0:
             return 0.0
+        if demand_mm is not None:
+            if demand_mm <= 0.0:
+                return 1.0
+            return clamp01(self._aw_mm / demand_mm)
         return clamp01(self._aw_mm / ((1.0 - self.depletion_fraction) * self.taw_mm))
 
     def _add_water(self, mm: float) -> None:
@@ -491,6 +495,18 @@ class DemandLedger:
         self._registered = {}
         return total
 
+
+    def pending(self) -> DayDemand:
+        """Demand registered so far today, without clearing the ledger."""
+        entries = list(self._registered.values())
+        return DayDemand(
+            water_mm=sum(d.water_mm for d in entries),
+            npk_kg_ha=tuple(sum(d.npk_kg_ha[i] for d in entries) for i in range(3)),
+        )
+
+    def set_recommended(self, crop_name: str, npk: tuple[float, float, float]) -> None:
+        self._recommended[crop_name.strip().lower()] = tuple(npk)
+
 # --------------------------------------------------------------------------- #
 # TextureSoilFertilizerModel: facade (day clock + call order)
 # Texture-based soil water and fertilizer model (facade).
@@ -617,7 +633,7 @@ class TextureSoilFertilizerModel(SoilFertilizerModel):
     ) -> ResourceAvailability:
         self._advance_to(int(day_index))
         self.demand_ledger.register(crop)  # called directly so its warning points at the caller
-        water = self.water_balance.factor()
+        water = self.water_balance.factor(self.demand_ledger.pending().water_mm)
         nutrient = self.nutrient_pools.factor()
         if self.combine_with_config_factors:
             water *= clamp01(getattr(greenhouse, "water_factor", 1.0))
