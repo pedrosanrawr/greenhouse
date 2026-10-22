@@ -1,7 +1,7 @@
 """Sweet potato baseline configuration and generic model selections."""
 from data.models.generic_growth import GenericCropGrowthModel
 from data.models.soil import NutrientApplication, TextureSoilFertilizerModel
-from data.models.generic_yield import GenericYieldModel
+from data.models.single_harvest_yield import RootTuberYieldModel
 from data.models.types import CropParameters
 from data.plants.base import CropDefinition
 
@@ -40,7 +40,20 @@ SWEET_POTATO_PARAMETERS = CropParameters(
     airflow_opt_high_m_s=0.7,
     airflow_high_limit_m_s=1.2,
     airflow_min_factor=0.2,
-        
+
+    # Workbook ID 23: provisional tuber-crop water band 450-700 mm/cycle (the
+    # cited study does not confirm it as a verified irrigation-only band).
+    # abs_min = 0.5 x 450, opt band = 450-700, abs_max = 1.25 x 700.
+    water_abs_min_mm=225,
+    water_opt_min_mm=450,
+    water_opt_max_mm=700,
+    water_abs_max_mm=875,
+    water_cycle_days=125,
+    water_band_verified=False,
+    n_rec_min_kg_ha=80, n_rec_max_kg_ha=100,  # workbook
+    p2o5_rec_min_kg_ha=50, p2o5_rec_max_kg_ha=70,  # workbook
+    k2o_rec_min_kg_ha=100, k2o_rec_max_kg_ha=140,  # workbook
+    nutrient_rates_verified=False,
     maintenance={
         "leaf": 0.010,  # TEST VALUE
         "stem": 0.003,  # TEST VALUE
@@ -107,7 +120,7 @@ SWEET_POTATO = CropDefinition(
     soil_model=TextureSoilFertilizerModel(
             "clay_loam",
             nutrients=NutrientApplication(100, 60, 60),
-            recommended_npk={"sweet_potato": (90.0, 45.0, 45.0)},
+            recommended_npk={"sweet potato": (90.0, 45.0, 45.0)},
         ),
-    yield_model=GenericYieldModel(),
+    yield_model=RootTuberYieldModel(),
 )

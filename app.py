@@ -10,6 +10,7 @@ st.set_page_config(
 
 from dashboard.placeholder import build_placeholder
 from dashboard.runner import run_all_crops
+from dashboard.config import MIN_SELECTED_CROPS
 from dashboard.sections.details import render_details
 from dashboard.sections.header import render_header
 from dashboard.sections.organ_compare import render_organ_compare
@@ -28,9 +29,11 @@ from dashboard.styles import inject_styles
 inject_styles()
 settings = render_sidebar()
 
-if not settings.selected_crops:
+if len(settings.selected_crops) < MIN_SELECTED_CROPS:
 	st.markdown("## Greenlab Simulator")
-	st.info("Choose one or more crops in the sidebar to begin.")
+	st.info(
+		f"Choose at least {MIN_SELECTED_CROPS} crops in the sidebar to begin."
+	)
 	st.stop()
 
 with st.spinner("Calculating crop growth..."):
