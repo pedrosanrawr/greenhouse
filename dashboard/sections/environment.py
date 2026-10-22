@@ -30,9 +30,11 @@ def render_environment(df):
 
     if variable in ("Water factor", "Nutrient factor"):
         st.caption(
-            "These factors describe the model inputs or outputs. "
-            "They should not be interpreted as measured plant stress "
-            "unless the model defines and validates them that way."
+            "These factors are calculated by the soil model from the water "
+            "budget and fertilizer. They describe how much of the crop's "
+            "daily demand was met, and should not be interpreted as "
+            "measured plant stress unless the model defines and validates "
+            "them that way."
         )
 
     if "response factor" in variable.lower():
@@ -47,6 +49,8 @@ def render_environment_section(df, settings):
     """Metrics row for the current settings, followed by the variable chart."""
     cols = st.columns(6)
 
+    n, p2o5, k2o = settings.fertilizer_npk
+
     cols[0].metric("Temperature", f"{settings.temperature:.1f} °C")
     cols[1].metric("Airflow", f"{settings.airflow:.2f} m/s")
     cols[2].metric("CO₂", f"{settings.co2_ppm:.0f} ppm")
@@ -54,7 +58,15 @@ def render_environment_section(df, settings):
         "Relative humidity",
         f"{settings.relative_humidity_pct:.0f}%",
     )
-    cols[4].metric("Water availability", f"{settings.water_factor:.2f}")
-    cols[5].metric("Nutrient availability", f"{settings.nutrient_factor:.2f}")
+    cols[4].metric(
+        "Water budget",
+        f"{settings.water_budget_mm_day:.1f} mm/day",
+        help="Total daily water for the greenhouse, shared by all crops.",
+    )
+    cols[5].metric(
+        "Fertilizer (kg/ha)",
+        f"{n:.0f}-{p2o5:.0f}-{k2o:.0f}",
+        help="Nitrogen (N), phosphate (P₂O₅) and potash (K₂O) applied at the start.",
+    )
 
     render_environment(df)

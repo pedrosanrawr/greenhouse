@@ -40,9 +40,24 @@ def _fmt(value):
     return "—" if value is None else f"{value:.2f}"
 
 
+def _fmt_optional(value):
+    return "not scored" if value is None else f"{value:.2f}"
+
+
 # ============================================================
 # SUMMARY (left column)
 # ============================================================
+
+def _render_water_summary(result: CompatibilityResult):
+    allocation = result.water_allocation
+    if allocation is None or allocation.total_requirement_mm_day <= 0:
+        return
+    st.caption(
+        f"Water: {allocation.budget_mm_day:.1f} mm/day budget against "
+        f"{allocation.total_requirement_mm_day:.1f} mm/day needed "
+        f"({allocation.coverage:.0%} covered)."
+    )
+
 
 def _render_summary(result: CompatibilityResult):
     scored = [c for c in result.crops if c.score is not None]
@@ -56,10 +71,10 @@ def _render_summary(result: CompatibilityResult):
                 "poorly matched crop pulls the group score down."
             ),
         )
-        st.caption(
-            f"mean {result.mean_score:.2f} · min {result.min_score:.2f}"
-        )
-        st.caption(f"weakest: {result.weakest_crop}")
+        # st.caption(
+        #     f"mean {result.mean_score:.2f} · min {result.min_score:.2f}"
+        # )
+        # st.caption(f"weakest: {result.weakest_crop}")
 
         if result.optimal_band_overlap_c is None:
             st.caption("No common optimal temperature range.")
@@ -124,7 +139,9 @@ def _render_bars(result: CompatibilityResult):
                         ranks[c.crop],
                         _fmt(c.temperature),
                         _fmt(c.cycle),
-                        "not scored" if c.light is None else _fmt(c.light),
+                        _fmt_optional(c.light),
+                        _fmt_optional(c.water),
+                        _fmt_optional(c.nutrient),
                     ]
                     for c in scored
                 ],
@@ -134,7 +151,9 @@ def _render_bars(result: CompatibilityResult):
                     "Rank: #%{customdata[0]}<br>"
                     "Temperature fit: %{customdata[1]}<br>"
                     "Cycle fit: %{customdata[2]}<br>"
-                    "Light fit: %{customdata[3]}"
+                    "Light fit: %{customdata[3]}<br>"
+                    "Water fit: %{customdata[4]}<br>"
+                    "Nutrient fit: %{customdata[5]}"
                     "<extra></extra>"
                 ),
                 showlegend=False,
@@ -166,6 +185,15 @@ def _render_bars(result: CompatibilityResult):
 def _render_table(result: CompatibilityResult, has_dli: bool):
     rows = []
     for crop in result.crops:
+        supplied = (
+            "—" if crop.water_supply_mm_day is None
+            else f"{crop.water_supply_mm_day:.2f}"
+        )
+        needed = (
+            "placeholder" if crop.water_requirement_mm_day is None
+            else f"{crop.water_requirement_mm_day:.2f}"
+        )
+
         if crop.score is None:
             rows.append({
                 "Crop": crop.crop,
@@ -173,24 +201,33 @@ def _render_table(result: CompatibilityResult, has_dli: bool):
                 "Temperature": "—",
                 "Cycle": "—",
                 "Light": "—",
+                "Water": "—",
+                "Nutrients": "—",
+                "Water supplied (mm/day)": supplied,
+                "Water needed (mm/day)": needed,
                 "Note": crop.excluded_reason,
             })
             continue
 
-        if crop.light is not None:
-            note = ""
-        elif not has_dli:
-            note = "light not scored (no DLI in results)"
-        else:
-            note = "light not scored (no crop DLI data)"
+        notes = list(crop.notes)
+        if crop.light is None:
+            notes.append(
+                "light not scored (no DLI in results)"
+                if not has_dli
+                else "light not scored (no crop DLI data)"
+            )
 
         rows.append({
             "Crop": crop.crop,
             "Score": _fmt(crop.score),
             "Temperature": _fmt(crop.temperature),
             "Cycle": _fmt(crop.cycle),
-            "Light": "not scored" if crop.light is None else _fmt(crop.light),
-            "Note": note,
+            "Light": _fmt_optional(crop.light),
+            "Water": _fmt_optional(crop.water),
+            "Nutrients": _fmt_optional(crop.nutrient),
+            "Water supplied (mm/day)": supplied,
+            "Water needed (mm/day)": needed,
+            "Note": "; ".join(notes),
         })
 
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
@@ -297,6 +334,8 @@ def render_compatibility(settings, df):
             settings.temperature,
             settings.simulation_days,
             dli,
+            water_budget_mm_day=settings.water_budget_mm_day,
+            nutrient_supply_kg_ha=settings.fertilizer_npk,
         )
     except ValueError as exc:
         st.error(f"Compatibility could not be calculated: {exc}")
@@ -305,6 +344,7 @@ def render_compatibility(settings, df):
     left, right = st.columns([1, 3])
     with left:
         _render_summary(result)
+        _render_water_summary(result)
     with right:
         _render_bars(result)
 

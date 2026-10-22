@@ -5,7 +5,7 @@ import pytest
 
 from data.models.generic_growth import GenericCropGrowthModel
 from data.models.types import EnvironmentConditions, ResourceAvailability
-from data.plants.tomato import TOMATO_PARAMETERS
+from data.plants.tomato.tomato import TOMATO_PARAMETERS
 
 
 def calculate_flux(

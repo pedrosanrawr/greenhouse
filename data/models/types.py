@@ -5,6 +5,8 @@ from typing import Dict, Tuple
 from math import isclose, isfinite
 from data.models.compatibility import validate_crop_requirements
 
+from typing import Dict, Mapping, Tuple
+
 ORGANS = ("leaf", "stem", "root", "flower", "fruit", "root_tuber", "stem_tuber")  # most plants don't have the last 2, so they are 0 in the biomass_ratio
 
 
@@ -52,6 +54,26 @@ class CropParameters:
 
     airflow_sensitivity: float | None = None
     airflow_half_saturation_m_s: float | None = None
+
+        # Water requirement, mm per crop cycle
+    water_abs_min_mm: float | None = None
+    water_opt_min_mm: float | None = None
+    water_opt_max_mm: float | None = None
+    water_abs_max_mm: float | None = None
+    water_cycle_days: float | None = None
+    water_band_verified: bool = False
+
+    # Recommended nutrient rates, kg/ha per cycle
+    n_rec_min_kg_ha: float | None = None
+    n_rec_max_kg_ha: float | None = None
+    n_excess_kg_ha: float | None = None
+    p2o5_rec_min_kg_ha: float | None = None
+    p2o5_rec_max_kg_ha: float | None = None
+    p2o5_excess_kg_ha: float | None = None
+    k2o_rec_min_kg_ha: float | None = None
+    k2o_rec_max_kg_ha: float | None = None
+    k2o_excess_kg_ha: float | None = None
+    nutrient_rates_verified: bool = False
 
     def __post_init__(self):
         if not self.biomass_ratio:
@@ -279,3 +301,20 @@ class YieldState:
     """Yield estimate; this baseline does not remove harvested biomass from the plant."""
     harvestable_biomass_g: float
     yield_ready: bool
+    harvested_biomass_g: float = 0.0
+    # Crop-specific numbers a yield model wants in the output (stress counters,
+    # fruit-set fraction, ...). The engine writes each as a "yield_<key>" column.
+    diagnostics: Mapping[str, float] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class YieldContext:
+    """Yung nalaman nung engine today. Istg my joke d2 e"""
+    environment: EnvironmentConditions
+    resources: ResourceAvailability
+    flux: GrowthFlux
+    greenhouse: GreenhouseConfig
+    phase: str
+    potential_growth_g: float # what the crop definition allowed today
+    granted_growth_g: float # what the carbon supply actually allowed
+    soil: Mapping[str, float] = field(default_factory=dict)  # soil model snapshot

@@ -47,7 +47,7 @@ crops = [c for c in settings.selected_crops if c in df["crop"].values]
 ph = build_placeholder(crops, settings.simulation_days)
 
 render_header(settings, len(crops), outcome.warnings)
-st.caption("🧪 Sections marked with this icon currently show placeholder data.")
+# st.caption("🧪 Sections marked with this icon currently show placeholder data.")
 
 # 1. Which crop grows best?
 # col_rank, col_heat = st.columns(2)
@@ -62,7 +62,7 @@ render_compatibility(settings, df)
 st.divider()
 # st.markdown('<hr style="margin:0.4rem 0;">', unsafe_allow_html=True)
 
-render_yields(ph.yields, ph.cumulative)
+render_yields(df, crops)
 st.divider()
 
 # 3. Organ growth

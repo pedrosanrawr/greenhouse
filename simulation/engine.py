@@ -23,7 +23,7 @@ from data.models.light import calculate_dli
 import pandas as pd
 
 from data.models.environment import NASAEnvironmentModel
-from data.models.types import CropParameters, CropState, GreenhouseConfig, ORGANS
+from data.models.types import CropParameters, CropState, GreenhouseConfig, YieldContext, ORGANS
 from data.plants.base import CropDefinition
 
 # Tolerate tiny floating-point rounding when checking the carbon budget.
@@ -90,7 +90,10 @@ def run_simulation(
     # A future contract revision may pass area explicitly in a dedicated context object.
     state._area_per_plant_m2 = greenhouse.area_per_plant_m2
     soil_model.initialize(greenhouse)
+    yield_model.initialize(params, greenhouse)
     rows = []
+
+    cumulative_harvested_g: float = 0.0
 
     for day_index in range(days):
         environment = environment_model.conditions_for_day(greenhouse, day_index)
@@ -155,7 +158,46 @@ def run_simulation(
         state.development_day = day_index + 1
         _validate_state(state, day_index)
 
-        yield_state = yield_model.estimate_yield(params, state, day_index)
+        yield_state = yield_model.estimate_yield(
+            params,
+            state,
+            day_index,
+            YieldContext(
+                environment=environment,
+                resources=resources,
+                flux=flux,
+                greenhouse=greenhouse,
+                phase=phase,
+                potential_growth_g=potential_growth,
+                granted_growth_g=granted_growth,
+                soil=soil_model.snapshot(),
+            ),
+        )
+        if (
+            not math.isfinite(yield_state.harvestable_biomass_g)
+            or yield_state.harvestable_biomass_g < 0.0
+        ):
+            raise ValueError(
+                f"impossible harvestable biomass on day {day_index}: "
+                f"{yield_state.harvestable_biomass_g!r}"
+            )
+
+        harvested = yield_state.harvested_biomass_g
+        if not math.isfinite(harvested) or harvested < 0.0:
+            raise ValueError(f"impossible harvested biomass on day {day_index}: {harvested!r}")
+        if harvested > 0.0:
+            organ = params.harvestable_organ
+            standing = state.biomass_g.get(organ, 0.0)
+            if harvested > standing + _CARBON_EPSILON:
+                raise ValueError(
+                    f"harvest exceeds standing {organ} biomass on day {day_index}: "
+                    f"{harvested:.6g} > {standing:.6g}"
+                )
+            state.biomass_g[organ] = max(0.0, standing - harvested)
+            cumulative_harvested_g += harvested
+            _validate_state(state, day_index)
+        standing_after = max(0.0, yield_state.harvestable_biomass_g - harvested)
+        
         total_biomass = sum(state.biomass_g.values())
 
         row = {
@@ -214,7 +256,14 @@ def run_simulation(
             "airflow_response_active": flux.airflow_response_active,
             "inside_par_mj_m2_day": inside_par_mj,
             "dli_mol_par_m2_day": dli_mol,
+
+            "harvested_biomass_g_day": harvested,
+            "cumulative_harvested_biomass_g": cumulative_harvested_g,
+            "total_yield_biomass_g": cumulative_harvested_g + standing_after,
         }
+        for key, value in yield_state.diagnostics.items():
+            row[f"yield_{key}"] = value
+
         rows.append(row)
 
     return pd.DataFrame(rows)
