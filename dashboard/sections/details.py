@@ -49,7 +49,7 @@ def _modeled_factor_data(df):
     return data, factor_columns
 
 def _interpretation(text):
-    with st.container(border=True):
+    with st.container():
         st.markdown("**Interpretation of data**")
         st.write(text)
 
