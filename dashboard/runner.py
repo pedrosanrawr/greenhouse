@@ -15,6 +15,7 @@ from data.models.water_budget import (
 )
 from data.plants import CROPS
 from simulation.engine import run_simulation
+from data.models.air import DEFAULT_REFERENCE_CO2_PPM
 
 if TYPE_CHECKING:
     from dashboard.sidebar import SidebarSettings
@@ -110,7 +111,7 @@ def build_greenhouse(s: "SidebarSettings") -> GreenhouseConfig:
         light_hours=16.0,
         irradiance_ppfd=250.0,
         airflow_m_s=s.airflow,
-        co2_ppm=s.co2_ppm,
+        co2_ppm=DEFAULT_REFERENCE_CO2_PPM,
         relative_humidity_pct=s.relative_humidity_pct,
         start_date=s.start_date,
         cover_par_transmittance=COVER_PAR_TRANSMITTANCE,

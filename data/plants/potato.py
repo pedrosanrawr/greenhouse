@@ -29,6 +29,19 @@ POTATO_PARAMETERS = CropParameters(
     lue=2.3,  # TEST VALUE
     extinction_k=0.75,  # TEST VALUE
     sla=0.022,  # TEST VALUE, m²/g
+    # Air-response profile from Crop_Database: Potato
+    vpd_low_limit_kpa=0.2,
+    vpd_opt_low_kpa=0.5,
+    vpd_opt_high_kpa=1.1,
+    vpd_high_limit_kpa=2.2,
+    vpd_min_factor=0.2,
+
+    airflow_low_limit_m_s=0.05,
+    airflow_opt_low_m_s=0.2,
+    airflow_opt_high_m_s=0.7,
+    airflow_high_limit_m_s=1.2,
+    airflow_min_factor=0.2,
+        
     maintenance={
         "leaf": 0.010,  # TEST VALUE
         "stem": 0.003,  # TEST VALUE

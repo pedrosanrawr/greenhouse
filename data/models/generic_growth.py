@@ -117,23 +117,28 @@ class GenericCropGrowthModel(CropGrowthModel):
             else 1.0
         )
 
-        # VPD: inactive unless all crop-specific thresholds are supplied.
-        vpd_active = crop.vpd_low_kpa is not None
+        # VPD: inactive unless all crop-specific parameters are supplied.
+        vpd_active = crop.vpd_opt_low_kpa is not None
 
         f_vpd = vpd_response_factor(
             vpd_kpa=air.vpd_kpa,
-            low_kpa=crop.vpd_low_kpa,
-            high_kpa=crop.vpd_high_kpa,
+            low_limit_kpa=crop.vpd_low_limit_kpa,
+            opt_low_kpa=crop.vpd_opt_low_kpa,
+            opt_high_kpa=crop.vpd_opt_high_kpa,
+            high_limit_kpa=crop.vpd_high_limit_kpa,
             min_factor=crop.vpd_min_factor,
         )
 
-        # Airflow: inactive unless its crop-specific parameters are supplied.
-        airflow_active = crop.airflow_sensitivity is not None
+        # Airflow: inactive unless a crop-specific response profile is supplied.
+        airflow_active = crop.airflow_opt_low_m_s is not None
 
         f_airflow = airflow_response_factor(
             airflow_m_s=air.airflow_m_s,
-            sensitivity=crop.airflow_sensitivity,
-            half_saturation_m_s=crop.airflow_half_saturation_m_s,
+            low_limit_m_s=crop.airflow_low_limit_m_s,
+            opt_low_m_s=crop.airflow_opt_low_m_s,
+            opt_high_m_s=crop.airflow_opt_high_m_s,
+            high_limit_m_s=crop.airflow_high_limit_m_s,
+            min_factor=crop.airflow_min_factor,
         )
 
         # Water and nutrient limitation.

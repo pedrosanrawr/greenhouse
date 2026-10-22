@@ -78,6 +78,15 @@ class NASAEnvironmentModel(EnvironmentModel):
         if (weather[SOLAR_COLUMN] < 0).any():
             raise ValueError("Solar radiation cannot be negative.")
 
+        # Average solar radiation for each calendar day across all years.
+        # MM-DD grouping prevents leap years from shifting later dates.
+        weather["month_day"] = weather["date"].dt.strftime("%m-%d")
+
+        self.solar_climatology = (
+            weather.groupby("month_day")[SOLAR_COLUMN].mean()
+        )
+
+        # Retain the dated records for inspection/debugging.
         self.weather = weather.set_index("date").sort_index()
 
     def conditions_for_day(
@@ -94,23 +103,24 @@ class NASAEnvironmentModel(EnvironmentModel):
             + pd.Timedelta(days=day_index)
         )
 
-        if simulation_date not in self.weather.index:
-            first_date = self.weather.index.min().date()
-            last_date = self.weather.index.max().date()
+        # Use the multi-year mean for this calendar day.
+        month_day = simulation_date.strftime("%m-%d")
 
+        if month_day not in self.solar_climatology.index:
             raise ValueError(
-                f"No NASA weather record for {simulation_date.date()}. "
-                f"Available range: {first_date} to {last_date}."
+                f"No solar climatology value for calendar day {month_day}."
             )
 
-        row = self.weather.loc[simulation_date]
+        mean_solar_radiation = float(
+            self.solar_climatology.loc[month_day]
+        )
 
         return EnvironmentConditions(
             temperature_c=greenhouse.temperature_c,
             light_hours=greenhouse.light_hours,
             irradiance_ppfd=greenhouse.irradiance_ppfd,
             airflow_m_s=greenhouse.airflow_m_s,
-            solar_radiation_mj_m2_day=float(row[SOLAR_COLUMN]),
+            solar_radiation_mj_m2_day=mean_solar_radiation,
             cover_par_transmittance=greenhouse.cover_par_transmittance,
             co2_ppm=greenhouse.co2_ppm,
             relative_humidity_pct=greenhouse.relative_humidity_pct,        
