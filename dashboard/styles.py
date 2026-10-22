@@ -125,7 +125,7 @@ _CSS = """
 
     /* Sidebar dividers can be even tighter */
     [data-testid="stSidebar"] hr {
-        margin: 0.4rem 0 !important;
+        margin: 0.4rem 0 1.5rem 0 !important;
     }
 
     /* Captions: less space under chart titles */

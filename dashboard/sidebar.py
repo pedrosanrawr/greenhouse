@@ -33,7 +33,9 @@ class SidebarSettings:
 
 def render_sidebar() -> SidebarSettings:
 	with st.sidebar:
-		st.markdown("# GREENLAB")
+		with st.container(horizontal=True, vertical_alignment="center", gap=10):
+			st.image("assets/logo.svg", width=44)
+			st.markdown("# GREENLAB")
 		st.caption("Greenhouse simulation workspace")
 		st.divider()
 
