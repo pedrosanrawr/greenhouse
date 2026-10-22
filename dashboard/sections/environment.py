@@ -18,7 +18,7 @@ def render_environment(df):
             "No recognized environmental columns are available "
             "in the simulation output."
         )
-        return
+        return None
 
     variable = st.selectbox(
         "Environmental variable",
@@ -43,6 +43,8 @@ def render_environment(df):
             "crop-specific parameters have not been configured. Check "
             "the active-response fields in the simulation data."
         )
+
+    return variable, available[variable]
 
 
 def render_environment_section(df, settings):
@@ -77,4 +79,4 @@ def render_environment_section(df, settings):
         help="Nitrogen (N), phosphate (P₂O₅) and potash (K₂O) applied at the start.",
     )
 
-    render_environment(df)
+    return render_environment(df)
