@@ -136,3 +136,26 @@ def test_co2_remains_at_fixed_reference_without_crop_profile():
     assert results["co2_ppm"].iloc[0] == pytest.approx(430.0)
     assert results["co2_factor"].iloc[0] == pytest.approx(1.0)
     assert not results["co2_response_active"].iloc[0]
+
+
+@pytest.mark.parametrize("crop_name", list(CROPS))
+def test_every_registered_crop_has_vpd_and_airflow_profiles(crop_name):
+    params = CROPS[crop_name].parameters
+
+    fields = (
+        "vpd_low_limit_kpa",
+        "vpd_opt_low_kpa",
+        "vpd_opt_high_kpa",
+        "vpd_high_limit_kpa",
+        "vpd_min_factor",
+        "airflow_low_limit_m_s",
+        "airflow_opt_low_m_s",
+        "airflow_opt_high_m_s",
+        "airflow_high_limit_m_s",
+        "airflow_min_factor",
+    )
+
+    for field in fields:
+        assert getattr(params, field) is not None, (
+            f"{crop_name} is missing {field}"
+        )

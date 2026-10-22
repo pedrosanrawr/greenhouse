@@ -19,6 +19,34 @@ from dashboard.sections.comparison import render_data_table
 from dashboard.sections.environment import render_environment_section
 from dashboard.utils import first_existing_column
 
+MODELED_FACTOR_COLUMNS = {
+    "Temperature": "temperature_factor",
+    "Water availability": "water_factor",
+    "Nutrient availability": "nutrient_factor",
+    "VPD": "vpd_factor",
+    "Canopy air speed": "airflow_factor",
+}
+
+
+def _modeled_factor_data(df):
+    factor_columns = [
+        column
+        for column in MODELED_FACTOR_COLUMNS.values()
+        if column in df.columns
+    ]
+
+    if not factor_columns or not {"crop", "day"}.issubset(df.columns):
+        return pd.DataFrame(), factor_columns
+
+    data = df[["crop", "day", *factor_columns]].copy().reset_index(drop=True)
+
+    for column in factor_columns:
+        data[column] = pd.to_numeric(data[column], errors="coerce")
+
+    data["_lowest_factor"] = data[factor_columns].min(axis=1, skipna=True)
+    data = data.dropna(subset=["_lowest_factor"])
+
+    return data, factor_columns
 
 def _interpretation(text):
     with st.container(border=True):
@@ -48,7 +76,8 @@ def _render_measure_interpretation(df, column_candidates, label, mode):
         day = pd.to_numeric(peak.get("day"), errors="coerce")
         day_text = f" on day {day:g}" if pd.notna(day) else ""
         _interpretation(
-            f"Average daily production was {average:.2f} model units per day. "
+            f"Average granted growth was {average:.2f} g dry mass per plant "
+            f"per day across the selected crop-days. "
             f"The highest recorded value was {peak[column]:.2f} for {crop}"
             f"{day_text}."
         )
@@ -75,20 +104,43 @@ def _render_measure_interpretation(df, column_candidates, label, mode):
     _interpretation(f"{label}: " + "; ".join(summaries) + ".")
 
 
-def _render_stress_interpretation(stress):
-    values = stress.apply(pd.to_numeric, errors="coerce")
-    if values.empty or values.notna().sum().sum() == 0:
-        _interpretation("No stress timeline values are available to interpret.")
+def _render_stress_interpretation(df):
+    data, factor_columns = _modeled_factor_data(df)
+
+    if data.empty:
+        _interpretation(
+            "No modeled limitation-factor data is available to interpret."
+        )
         return
-    mean_value = values.stack().mean()
-    weakest = values.stack().idxmin()
-    _interpretation(
-        f"The placeholder timeline averaged {mean_value:.2f} on a 0–1 scale. "
-        f"Its lowest value was {values.loc[weakest[0], weakest[1]]:.2f} for "
-        f"{weakest[0]} on day {weakest[1]}. These values are illustrative "
-        "and do not represent validated crop stress."
+
+    mean_value = data["_lowest_factor"].mean()
+
+    if mean_value >= 1.0 and data["_lowest_factor"].min() >= 1.0:
+        _interpretation(
+            "None of the included response or availability factors fell "
+            "below 1.00 during this run. This is a model diagnostic, not "
+            "a validated measure of total plant stress."
+        )
+        return
+
+    worst = data.loc[data["_lowest_factor"].idxmin()]
+    factor_column = worst[factor_columns].idxmin()
+    factor_label = next(
+        label
+        for label, column in MODELED_FACTOR_COLUMNS.items()
+        if column == factor_column
     )
 
+    day = pd.to_numeric(worst["day"], errors="coerce")
+    day_text = f" on day {day:g}" if pd.notna(day) else ""
+
+    _interpretation(
+        f"The lowest modeled factor averaged {mean_value:.2f} across "
+        f"the selected crop-days. The lowest value was "
+        f"{worst['_lowest_factor']:.2f} for {worst['crop']}{day_text}, "
+        f"driven by the {factor_label.lower()} factor. This is a diagnostic "
+        "proxy, not a validated composite stress score."
+    )
 
 def _render_data_interpretation(df, crops):
     if df.empty:
@@ -111,30 +163,66 @@ def _render_data_interpretation(df, crops):
     )
 
 
-def _render_stress_timeline(stress):
-    st.caption("🧪 Placeholder data")
-    how_to_read(
-        "Green days were close to ideal, red days were limited by "
-        "temperature, light, water or nutrients."
+def _render_stress_timeline(df):
+    data, _ = _modeled_factor_data(df)
+
+    if data.empty:
+        st.info("No modeled limitation-factor data is available.")
+        return
+
+    timeline = (
+        data.pivot(
+            index="crop",
+            columns="day",
+            values="_lowest_factor",
+        )
+        .sort_index(axis=1)
     )
+
+    how_to_read(
+        "Each cell shows the lowest configured response or availability "
+        "factor for that crop and day. Lower values indicate a more "
+        "limiting factor under the current model."
+    )
+
     fig = go.Figure(
         go.Heatmap(
-            z=stress.values,
-            x=list(stress.columns),
-            y=list(stress.index),
-            zmin=0, zmax=1,
-            colorscale=[[0, "#B5533C"], [0.5, "#C9B45B"], [1, "#8DBB68"]],
-            hovertemplate="<b>%{y}</b><br>Day %{x}<br>Condition: %{z:.2f}<extra></extra>",
-            colorbar={"title": "1 = ideal", "thickness": 10},
+            z=timeline.to_numpy(),
+            x=list(timeline.columns),
+            y=list(timeline.index),
+            zmin=0,
+            zmax=1,
+            colorscale=[
+                [0, "#B5533C"],
+                [0.5, "#C9B45B"],
+                [1, "#8DBB68"],
+            ],
+            hovertemplate=(
+                "<b>%{y}</b><br>"
+                "Day %{x}<br>"
+                "Lowest modeled factor: %{z:.2f}"
+                "<extra></extra>"
+            ),
+            colorbar={"title": "Lowest factor", "thickness": 10},
         )
     )
+
     plot_layout(fig, height=240)
-    fig.update_layout(hovermode="closest", xaxis_title="Simulation day")
+    fig.update_layout(
+        hovermode="closest",
+        xaxis_title="Simulation day",
+    )
     fig.update_yaxes(autorange="reversed", automargin=True)
+
     st.plotly_chart(fig, use_container_width=True, config=CHART_CONFIG)
+    st.caption(
+        "This diagnostic uses temperature, water, nutrient, VPD and canopy "
+        "air-speed factors. Light influences assimilation directly and is "
+        "not represented as a separate factor here. This is not a validated "
+        "whole-plant stress index."
+    )
 
-
-def render_details(df, crops, settings, stress):
+def render_details(df, crops, settings):
     st.markdown("### Detailed analysis")
     tabs = st.tabs([
         "Total biomass",
@@ -161,8 +249,8 @@ def render_details(df, crops, settings, stress):
             df, YIELD_COLUMNS, "Harvestable biomass", "trend"
         )
     with tabs[3]:
-        _render_stress_timeline(stress)
-        _render_stress_interpretation(stress)
+        _render_stress_timeline(df)
+        _render_stress_interpretation(df)
     with tabs[4]:
         environment = render_environment_section(df, settings)
         if environment:

@@ -36,7 +36,7 @@ def render_daily_production(df):
     line_chart(
         df,
         col,
-        "Daily biomass production (model units/day)",
+        "Granted biomass growth (g dry mass/plant/day)",
     )
 
 

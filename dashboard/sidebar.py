@@ -183,16 +183,20 @@ def render_sidebar() -> SidebarSettings:
 
             if selected_crops and total_requirement > 0:
                 coverage = water_budget_mm_day / total_requirement
+
                 st.caption(
-                    f"The selected crops need about {total_requirement:.1f} "
-                    f"1L/m^2 combined. This budget covers {coverage:.0%} of that."
+                    f"Estimated combined daily water requirement: "
+                    f"{total_requirement:.1f} L/m²/day. "
+                    f"The current budget covers {coverage:.0%}."
                 )
-                # if placeholders:
-                #     st.caption(
-                #         f"{placeholders} crop(s) have no verified water "
-                #         f"requirement and use a placeholder of "
-                #         f"{DEFAULT_WATER_DEMAND_MM_DAY:g} L/m^2."
-                #     )
+
+                if placeholders:
+                    st.caption(
+                        f"{placeholders} selected crop(s) use the placeholder "
+                        f"requirement of {DEFAULT_WATER_DEMAND_MM_DAY:g} "
+                        "L/m²/day because their water bands are not enabled "
+                        "as verified model inputs."
+                    )
 
             st.markdown("**Fertilizer applied at the start (kg/ha)**")
             fertilizer_n = st.number_input(
@@ -228,14 +232,15 @@ def render_sidebar() -> SidebarSettings:
                 format_func=lambda value: f"{value} days",
             )
 
-            latest_start_date = WEATHER_END_DATE - timedelta(days=simulation_days - 1)
-
             start_date = st.date_input(
                 "Starting date",
-                value=WEATHER_START_DATE,
-                min_value=WEATHER_START_DATE,
-                max_value=latest_start_date,
-                help="The selected simulation period must fit in the configured archive.",
+                value=date.today(),
+                help=(
+                    "This date sets the simulation calendar. Solar radiation "
+                    "uses the multi-year average for each calendar day "
+                    "(month and day) across the 2001–2025 dataset, rather "
+                    "than the selected year's observed daily value."
+                ),
             )
 
         # with st.expander("Advanced assumptions", expanded=False):

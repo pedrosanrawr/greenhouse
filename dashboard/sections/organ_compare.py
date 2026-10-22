@@ -40,7 +40,7 @@ def _stacked(organs, crops, norm):
 
 
 def render_organ_compare(organs, crops):
-    section_header("Organ growth", placeholder=True)
+    section_header("Organ growth")
     col_abs, col_pct = st.columns(2)
 
     with col_abs:

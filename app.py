@@ -8,12 +8,14 @@ st.set_page_config(
 	initial_sidebar_state="expanded",
 )
 
-from dashboard.placeholder import build_placeholder
 from dashboard.runner import run_all_crops
 from dashboard.config import MIN_SELECTED_CROPS
 from dashboard.sections.details import render_details
 from dashboard.sections.header import render_header
-from dashboard.sections.organ_compare import render_organ_compare
+from dashboard.sections.organs import (
+    render_allocation,
+    render_organ_biomass_grid,
+)
 from dashboard.sections.ranking import (
 	render_breakdown,
 	render_insights,
@@ -48,7 +50,6 @@ if outcome.results.empty:
 
 df = outcome.results
 crops = [c for c in settings.selected_crops if c in df["crop"].values]
-ph = build_placeholder(crops, settings.simulation_days)
 
 # 1. Simulation overview
 with st.expander("Simulation Overview", expanded=False):
@@ -67,12 +68,13 @@ with st.expander("Yield", expanded=False):
 
 # 4. Organ growth
 with st.expander("Organ Growth Comparison", expanded=False):
-	render_organ_compare(ph.organs, crops)
+    render_organ_biomass_grid(df, crops)
+    render_allocation(df, crops)
 
 # 5. Supporting details
 # st.markdown('<hr style="margin:0.4rem 0;">', unsafe_allow_html=True)
 with st.expander("Supporting Details & Total Biomass", expanded=False):
-	render_details(df, crops, settings, ph.stress)
+	render_details(df, crops, settings)
 
 # st.markdown('<hr style="margin:0.4rem 0;">', unsafe_allow_html=True)
 st.caption(

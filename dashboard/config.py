@@ -36,6 +36,7 @@ TOTAL_YIELD_COLUMNS = ["total_yield_biomass_g", "harvestable_biomass_g"]
 CUMULATIVE_HARVEST_COLUMNS = ["cumulative_harvested_biomass_g"]
 
 DAILY_PRODUCTION_COLUMNS = [
+    "granted_growth_g_day",
     "daily_biomass_production_g",
     "daily_biomass_production_g_dm_m2",
     "daily_biomass_increment_g",
