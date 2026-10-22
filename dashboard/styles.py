@@ -102,7 +102,13 @@ _CSS = """
     }
 
     .st-key-compatibility_interpretation {
-        border-width: 1.5px !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .st-key-compatibility_interpretation [data-testid="stVerticalBlockBorderWrapper"] {
+        border: none !important;
+        box-shadow: none !important;
     }
 
     /* Metric cards */

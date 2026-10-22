@@ -106,7 +106,7 @@ def _render_interpretation(result: CompatibilityResult, height: int):
         )
 
     with st.container(
-        height=height, border=True, key="compatibility_interpretation"
+        height=height, key="compatibility_interpretation"
     ):
         st.markdown("**Interpretation**")
         st.write(paragraph)
