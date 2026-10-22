@@ -250,15 +250,17 @@ def render_sidebar() -> SidebarSettings:
 
             start_date = st.date_input(
                 "Starting date",
-                value=date.today(),
+                value=WEATHER_END_DATE,
+                min_value=WEATHER_START_DATE,
+                max_value=WEATHER_END_DATE,
+                key="starting_date_2001_2025",
                 help=(
-                    "This date sets the simulation calendar. Solar radiation "
-                    "uses the multi-year average for each calendar day "
-                    "(month and day) across the 2001–2025 dataset, rather "
-                    "than the selected year's observed daily value."
+                    "Select a starting date within the 2001–2025 dataset period. "
+                    "Solar radiation uses the multi-year average for each calendar "
+                    "day (month and day), rather than the selected year's observed "
+                    "daily value."
                 ),
             )
-
         # with st.expander("Advanced assumptions", expanded=False):
         #     st.text_input(
         #         "Greenhouse cover",
