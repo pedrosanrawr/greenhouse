@@ -21,7 +21,7 @@ from dashboard.utils import first_existing_column
 
 
 def _interpretation(text):
-    with st.container(border=True):
+    with st.container():
         st.markdown("**Interpretation of data**")
         st.write(text)
 
