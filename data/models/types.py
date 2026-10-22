@@ -48,12 +48,21 @@ class CropParameters:
     # Keep None until suitable values are sourced or calibrated.
     co2_k_half_ppm: float | None = None
 
-    vpd_low_kpa: float | None = None
-    vpd_high_kpa: float | None = None
+    # VPD response: lower limit, optimal band, upper limit, and
+    # response factor at or beyond either stress limit.
+    vpd_low_limit_kpa: float | None = None
+    vpd_opt_low_kpa: float | None = None
+    vpd_opt_high_kpa: float | None = None
+    vpd_high_limit_kpa: float | None = None
     vpd_min_factor: float | None = None
 
-    airflow_sensitivity: float | None = None
-    airflow_half_saturation_m_s: float | None = None
+    # Airflow response: lower limit, optimal band, upper limit, and
+    # response factor at or beyond either stress limit.
+    airflow_low_limit_m_s: float | None = None
+    airflow_opt_low_m_s: float | None = None
+    airflow_opt_high_m_s: float | None = None
+    airflow_high_limit_m_s: float | None = None
+    airflow_min_factor: float | None = None
 
         # Water requirement, mm per crop cycle
     water_abs_min_mm: float | None = None
@@ -132,8 +141,10 @@ class CropParameters:
 
         # ---- Optional VPD response parameters
         vpd_parameters = (
-            self.vpd_low_kpa,
-            self.vpd_high_kpa,
+            self.vpd_low_limit_kpa,
+            self.vpd_opt_low_kpa,
+            self.vpd_opt_high_kpa,
+            self.vpd_high_limit_kpa,
             self.vpd_min_factor,
         )
 
@@ -143,16 +154,18 @@ class CropParameters:
                     f"{self.name}: all VPD response parameters must be supplied together"
                 )
 
-            low, high, minimum = vpd_parameters
+            low_limit, opt_low, opt_high, high_limit, minimum = vpd_parameters
 
             if not all(isfinite(v) for v in vpd_parameters):
-                raise ValueError(
-                    f"{self.name}: VPD parameters must be finite"
-                )
+                raise ValueError(f"{self.name}: VPD parameters must be finite")
 
-            if low < 0.0 or high <= low:
+            if not (
+                0.0 <= low_limit < opt_low
+                <= opt_high < high_limit
+            ):
                 raise ValueError(
-                    f"{self.name}: VPD limits must satisfy 0 <= low < high"
+                    f"{self.name}: VPD limits must satisfy "
+                    "0 <= low_limit < opt_low <= opt_high < high_limit"
                 )
 
             if not 0.0 <= minimum <= 1.0:
@@ -162,26 +175,38 @@ class CropParameters:
 
         # ---- Optional airflow response parameters
         airflow_parameters = (
-            self.airflow_sensitivity,
-            self.airflow_half_saturation_m_s,
+            self.airflow_low_limit_m_s,
+            self.airflow_opt_low_m_s,
+            self.airflow_opt_high_m_s,
+            self.airflow_high_limit_m_s,
+            self.airflow_min_factor,
         )
 
         if any(v is not None for v in airflow_parameters):
             if not all(v is not None for v in airflow_parameters):
                 raise ValueError(
-                    f"{self.name}: both airflow parameters must be supplied together"
+                    f"{self.name}: all airflow response parameters must be supplied together"
                 )
 
-            sensitivity, half_saturation = airflow_parameters
+            low_limit, opt_low, opt_high, high_limit, minimum = airflow_parameters
 
-            if (
-                not isfinite(sensitivity)
-                or not isfinite(half_saturation)
-                or sensitivity < 0.0
-                or half_saturation <= 0.0
+            if not all(isfinite(v) for v in airflow_parameters):
+                raise ValueError(
+                    f"{self.name}: airflow parameters must be finite"
+                )
+
+            if not (
+                0.0 <= low_limit < opt_low
+                <= opt_high < high_limit
             ):
                 raise ValueError(
-                    f"{self.name}: invalid airflow response parameters"
+                    f"{self.name}: airflow limits must satisfy "
+                    "0 <= low_limit < opt_low <= opt_high < high_limit"
+                )
+
+            if not 0.0 <= minimum <= 1.0:
+                raise ValueError(
+                    f"{self.name}: airflow minimum factor must be between 0 and 1"
                 )
 
         validate_crop_requirements(
@@ -238,7 +263,7 @@ class GreenhouseConfig:
     nutrient_factor: float = 1.0
     start_date: date | None = None
     cover_par_transmittance: float = 0.86
-    co2_ppm: float = 426.0
+    co2_ppm: float = 430.0
     relative_humidity_pct: float = 70.0    
 
 @dataclass(frozen=True)
@@ -252,7 +277,7 @@ class EnvironmentConditions:
     solar_radiation_mj_m2_day: float
     cover_par_transmittance: float
 
-    co2_ppm: float = 426.0
+    co2_ppm: float = 430.0
     relative_humidity_pct: float = 70.0    
 
 @dataclass(frozen=True)
