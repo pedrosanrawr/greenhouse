@@ -16,8 +16,10 @@ TEXT_COLOR = "#F2F2F2"
 MUTED_COLOR = "#BDBDBD"
 
 CAPTION = (
-    "Scenario suitability index based on provisional ecological "
-    "requirements. Not a yield prediction."
+    "Scenario suitability index based on crop requirements, response "
+    "profiles, and selected soil texture. Water, nutrient, and soil-texture "
+    "ratings are provisional; air-response profiles are also uncalibrated. "
+    "This index is not a yield prediction."
 )
 
 
@@ -101,8 +103,9 @@ def _render_interpretation(result: CompatibilityResult, height: int):
                 "temperature requirements are unavailable. "
             )
         paragraph += (
-            "Scores combine the available temperature, cycle, light, "
-            "water, and nutrient fits."
+            "Scores combine the available temperature, cycle, light, water, "
+            "nutrient, soil-texture, VPD, and airflow fits. Some input data "
+            "and response profiles remain provisional."
         )
 
     with st.container(
@@ -195,6 +198,9 @@ def _render_bars(result: CompatibilityResult, height: int):
                         _fmt_optional(c.light),
                         _fmt_optional(c.water),
                         _fmt_optional(c.nutrient),
+                        _fmt_optional(c.soil),
+                        _fmt_optional(c.vpd),
+                        _fmt_optional(c.airflow),
                     ]
                     for c in scored
                 ],
@@ -206,7 +212,10 @@ def _render_bars(result: CompatibilityResult, height: int):
                     "Cycle fit: %{customdata[2]}<br>"
                     "Light fit: %{customdata[3]}<br>"
                     "Water fit: %{customdata[4]}<br>"
-                    "Nutrient fit: %{customdata[5]}"
+                    "Nutrient fit: %{customdata[5]}<br>"
+                    "Soil fit: %{customdata[6]}<br>"
+                    "VPD fit: %{customdata[7]}<br>"
+                    "Air-speed fit: %{customdata[8]}"
                     "<extra></extra>"
                 ),
                 showlegend=False,
@@ -257,6 +266,9 @@ def _render_table(result: CompatibilityResult, has_dli: bool):
                 "Nutrients": "—",
                 "Water supplied (mm/day)": supplied,
                 "Water needed (mm/day)": needed,
+                "Soil": "—",
+                "VPD": "—",
+                "Air speed": "—",
                 "Note": crop.excluded_reason,
             })
             continue
@@ -279,6 +291,9 @@ def _render_table(result: CompatibilityResult, has_dli: bool):
             "Nutrients": _fmt_optional(crop.nutrient),
             "Water supplied (mm/day)": supplied,
             "Water needed (mm/day)": needed,
+            "Soil": _fmt_optional(crop.soil),
+            "VPD": _fmt_optional(crop.vpd),
+            "Air speed": _fmt_optional(crop.airflow),
             "Note": "; ".join(notes),
         })
 
@@ -369,8 +384,9 @@ def render_compatibility(settings, df):
     section_header(
         "Compatibility",
         "How well each selected crop suits this greenhouse, based on "
-        "temperature, run length and (when available) daylight. "
-        "Longer bars mean a closer match to the crop's ecological "
+        "temperature, crop cycle, daylight, water, nutrients, soil texture, "
+        "humidity-related VPD, and airflow where the required data are "
+        "available. Longer bars mean a closer match to the crop's ecological "
         "requirements.",
     )
 
@@ -388,6 +404,9 @@ def render_compatibility(settings, df):
             dli,
             water_budget_mm_day=settings.water_budget_mm_day,
             nutrient_supply_kg_ha=settings.fertilizer_npk,
+            relative_humidity_pct=settings.relative_humidity_pct,
+            airflow_m_s=settings.airflow,
+            soil_texture=settings.soil_texture,
         )
     except ValueError as exc:
         st.error(f"Compatibility could not be calculated: {exc}")

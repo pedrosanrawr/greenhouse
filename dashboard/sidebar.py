@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import date, timedelta
+from data.models.soil import SOIL_TEXTURES
 
 import streamlit as st
 
@@ -38,6 +39,7 @@ class SidebarSettings:
     fertilizer_k2o_kg_ha: float
     simulation_days: int
     start_date: date
+    soil_texture: str
 
     @property
     def fertilizer_npk(self):
@@ -56,7 +58,10 @@ def _combined_water_requirement(selected_crops):
     """
     total, placeholders = 0.0, 0
     for name in selected_crops:
-        requirement = water_requirement_mm_day(CROPS[name].parameters)
+        requirement = water_requirement_mm_day(
+            CROPS[name].parameters,
+            allow_unverified=True,
+        )
         if requirement is None:
             requirement = DEFAULT_WATER_DEMAND_MM_DAY
             placeholders += 1
@@ -158,6 +163,17 @@ def render_sidebar() -> SidebarSettings:
             )
 
         with st.expander("Water and fertilizer", expanded=True):
+            soil_texture = st.selectbox(
+                "Soil texture",
+                options=list(SOIL_TEXTURES),
+                index=list(SOIL_TEXTURES).index("clay_loam"),
+                format_func=lambda key: SOIL_TEXTURES[key].name,
+                help=(
+                    "One shared soil texture for the selected crop beds. "
+                    "The soil-suitability ratings are provisional."
+                ),
+            )
+            
             total_requirement, placeholders = _combined_water_requirement(
                 selected_crops
             )
@@ -277,4 +293,5 @@ def render_sidebar() -> SidebarSettings:
         fertilizer_k2o_kg_ha=fertilizer_k2o,
         simulation_days=simulation_days,
         start_date=start_date,
+        soil_texture=soil_texture,
     )

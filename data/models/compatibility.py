@@ -4,7 +4,8 @@ A scenario suitability index (0 to 1) for how well a run's crops suit the
 run's environment. It is computed from dataset requirements and the user's
 inputs only, never from simulated biomass, yield or simulated growth factors.
 
-Sub-scores: temperature, cycle, light, water, nutrient.
+Sub-scores: temperature, cycle, light, water, nutrient, soil texture, VPD,
+and airflow. Only available sub-scores contribute to the result.
 
 This module is pure: no Streamlit and no engine imports.
 """
@@ -14,6 +15,14 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping
 from dataclasses import dataclass
+import csv
+from pathlib import Path
+
+from data.models.air import (
+    airflow_response_factor,
+    calculate_vpd_kpa,
+    vpd_response_factor,
+)
 
 from data.models.water_budget import (
     WaterAllocation,
@@ -34,7 +43,11 @@ DEFAULT_WEIGHTS = {
     "light": 0.2,
     "water": 0.2,
     "nutrient": 0.2,
+    "soil": 0.2,
+    "vpd": 0.2,
+    "airflow": 0.2,
 }
+
 VALID_WEIGHT_KEYS = frozenset(DEFAULT_WEIGHTS)
 
 # Group score = share * mean + (1 - share) * min, over scored crops.
@@ -48,6 +61,73 @@ NUTRIENT_KEYS = ("n", "p2o5", "k2o")
 REASON_BAND_MISSING = "temperature band missing"
 REASON_BAND_UNVERIFIED = "temperature band not verified"
 
+SOIL_TEXTURE_COLUMNS = {
+    "clay": "texture_clay",
+    "clay_loam": "texture_clay_loam",
+    "loam": "texture_loam",
+    "sandy_loam": "texture_sandy_loam",
+}
+
+# Explicit provisional mapping from qualitative labels to score values.
+# These numeric values are model assumptions, not supplied by the source data.
+SOIL_RATING_SCORES = {
+    "optimal": 1.0,
+    "marginal": 0.5,
+    # An explicit "unsuitable" source label should be a zero score, not an
+    # omitted soil sub-score that silently improves the combined result.
+    "unsuitable": 0.0,
+}
+
+
+def _load_soil_suitability():
+    path = (
+        Path(__file__).resolve().parents[2]
+        / "data"
+        / "crop_database.tsv"
+    )
+
+    result = {}
+
+    with path.open("r", encoding="utf-8-sig", newline="") as stream:
+        # The first three lines are workbook title, description, and blank.
+        for _ in range(3):
+            next(stream, None)
+
+        reader = csv.DictReader(stream, delimiter="\t")
+
+        for row in reader:
+            # Most slash-separated names put the primary local name first,
+            # but "Red/bulb onion" contains a slash inside one name. Map that
+            # crop explicitly instead of accidentally indexing it as "red".
+            common_name = (row.get("Common name") or "").strip()
+            if not common_name:
+                continue
+            if common_name.casefold().startswith("red/bulb onion"):
+                name = "onion"
+            else:
+                name = common_name.split("/")[0].strip().casefold()
+            if not name:
+                continue
+
+            ratings = {}
+            for texture, column in SOIL_TEXTURE_COLUMNS.items():
+                label = (row.get(column) or "").strip().casefold()
+                ratings[texture] = SOIL_RATING_SCORES.get(label)
+
+            result[name] = {
+                "ratings": ratings,
+                "verified": (
+                    (row.get("soil_texture_verified") or "")
+                    .strip()
+                    .casefold()
+                    == "true"
+                ),
+            }
+
+    return result
+
+
+SOIL_SUITABILITY = _load_soil_suitability()
 
 # ============================================================
 # RESULT TYPES
@@ -65,6 +145,12 @@ class CropCompatibility:
     nutrient: float | None = None
     water_supply_mm_day: float | None = None
     water_requirement_mm_day: float | None = None
+    soil: float | None = None
+    vpd: float | None = None
+    airflow: float | None = None
+    relative_humidity_pct: float | None = None
+    airflow_m_s: float | None = None
+    soil_texture: str | None = None
     notes: tuple[str, ...] = ()
 
 
@@ -402,7 +488,7 @@ def _temperature_band(params):
     )
 
 
-def nutrient_rates(params):
+def nutrient_rates(params, *, allow_unverified=False):
     """Verified {key: (rec_min, rec_max, excess)} for N, P2O5, K2O, or None."""
     rates = {
         key: (
@@ -414,7 +500,10 @@ def nutrient_rates(params):
     }
     if any(low is None or high is None for low, high, _ in rates.values()):
         return None
-    if not getattr(params, "nutrient_rates_verified", False):
+    if (
+        not allow_unverified
+        and not getattr(params, "nutrient_rates_verified", False)
+    ):
         return None
     return rates
 
@@ -458,6 +547,9 @@ def crop_compatibility(
     name=None,
     water_supply_mm_day=None,
     nutrient_supply_kg_ha=None,
+    relative_humidity_pct: float | None = None,
+    airflow_m_s: float | None = None,
+    soil_texture: str | None = None,
 ) -> CropCompatibility:
     _validate_weights(weights)
     temperature_c = _finite("temperature_c", temperature_c)
@@ -480,13 +572,21 @@ def crop_compatibility(
     dli_min = getattr(params, "dli_min", None)
     dli_opt = getattr(params, "dli_opt", None)
     verified = bool(getattr(params, "temperature_band_verified", False))
-    requirement = water_requirement_mm_day(params)
+    # Compatibility allocates water using available provisional bands too;
+    # show the same numeric requirement in the per-crop details table.
+    requirement = water_requirement_mm_day(
+        params,
+        allow_unverified=True,
+    )
 
     def excluded(reason):
         return CropCompatibility(
             crop_name, None, None, None, None, reason,
             water_supply_mm_day=water_supply_mm_day,
             water_requirement_mm_day=requirement,
+            relative_humidity_pct=relative_humidity_pct,
+            airflow_m_s=airflow_m_s,
+            soil_texture=soil_texture,
         )
 
     # Eligibility gate: never impute a missing or unverified band.
@@ -512,7 +612,7 @@ def crop_compatibility(
 
     water = None
     if water_supply_mm_day is not None:
-        water_band = water_band_mm_day(params)
+        water_band = water_band_mm_day(params, allow_unverified=True,)
         if water_band is None:
             notes.append(f"water not scored ({_water_unavailable_reason(params)})")
         else:
@@ -520,7 +620,7 @@ def crop_compatibility(
 
     nutrient = None
     if nutrient_supply_kg_ha is not None:
-        rates = nutrient_rates(params)
+        rates = nutrient_rates(params, allow_unverified=True,)
         if rates is None:
             notes.append(
                 f"nutrients not scored ({_nutrient_unavailable_reason(params)})"
@@ -532,6 +632,63 @@ def crop_compatibility(
                 for applied, key in zip(nutrient_supply_kg_ha, NUTRIENT_KEYS)
             )
 
+    # Soil texture suitability uses the source workbook's qualitative ratings.
+    soil = None
+    if soil_texture is not None:
+        soil_record = SOIL_SUITABILITY.get(crop_name.casefold())
+
+        if soil_record is not None:
+            soil = soil_record["ratings"].get(soil_texture)
+
+            if soil is None:
+                notes.append(
+                    f"soil not scored (no rating for {soil_texture})"
+                )
+            elif not soil_record["verified"]:
+                notes.append(
+                    "soil suitability uses a provisional qualitative rating"
+                )
+        else:
+            notes.append("soil not scored (crop rating unavailable)")
+
+    # VPD response is calculated from the same temperature and humidity inputs.
+    vpd = None
+    if (
+        relative_humidity_pct is not None
+        and params.vpd_opt_low_kpa is not None
+    ):
+        vpd_kpa = calculate_vpd_kpa(
+            temperature_c,
+            relative_humidity_pct,
+        )
+
+        vpd = vpd_response_factor(
+            vpd_kpa=vpd_kpa,
+            low_limit_kpa=params.vpd_low_limit_kpa,
+            opt_low_kpa=params.vpd_opt_low_kpa,
+            opt_high_kpa=params.vpd_opt_high_kpa,
+            high_limit_kpa=params.vpd_high_limit_kpa,
+            min_factor=params.vpd_min_factor,
+        )
+        notes.append("VPD score uses a provisional crop-response profile")
+
+    # Airspeed response uses the crop's existing canopy air-speed profile.
+    airflow = None
+    if (
+        airflow_m_s is not None
+        and params.airflow_opt_low_m_s is not None
+    ):
+        airflow = airflow_response_factor(
+            airflow_m_s=airflow_m_s,
+            low_limit_m_s=params.airflow_low_limit_m_s,
+            opt_low_m_s=params.airflow_opt_low_m_s,
+            opt_high_m_s=params.airflow_opt_high_m_s,
+            high_limit_m_s=params.airflow_high_limit_m_s,
+            min_factor=params.airflow_min_factor,
+        )
+        notes.append(
+            "air-speed score uses a provisional crop-response profile"
+        )
     score = combine_scores(
         {
             "temperature": temperature,
@@ -539,6 +696,9 @@ def crop_compatibility(
             "light": light,
             "water": water,
             "nutrient": nutrient,
+            "soil": soil,
+            "vpd": vpd,
+            "airflow": airflow,
         },
         weights,
     )
@@ -549,6 +709,12 @@ def crop_compatibility(
         water_supply_mm_day=water_supply_mm_day,
         water_requirement_mm_day=requirement,
         notes=tuple(notes),
+        soil=soil,
+        vpd=vpd,
+        airflow=airflow,
+        relative_humidity_pct=relative_humidity_pct,
+        airflow_m_s=airflow_m_s,
+        soil_texture=soil_texture,
     )
 
 
@@ -570,6 +736,9 @@ def score_run(
     weights=DEFAULT_WEIGHTS,
     water_budget_mm_day=None,
     nutrient_supply_kg_ha=None,
+    relative_humidity_pct=None,
+    airflow_m_s=None,
+    soil_texture=None,
 ) -> CompatibilityResult:
     """Score a group of crops.
 
@@ -585,16 +754,29 @@ def score_run(
     if water_budget_mm_day is not None:
         allocation = allocate_water_budget(
             water_budget_mm_day,
-            {name: water_requirement_mm_day(params) for name, params in named},
+            {
+                name: water_requirement_mm_day(
+                    params,
+                    allow_unverified=True,
+                )
+                for name, params in named
+            }
         )
         supplies = allocation.supply_mm_day
 
     results = tuple(
         crop_compatibility(
-            params, temperature_c, run_days, mean_dli, weights,
+            params,
+            temperature_c,
+            run_days,
+            mean_dli,
+            weights,
             name=name,
             water_supply_mm_day=supplies.get(name),
             nutrient_supply_kg_ha=nutrient_supply_kg_ha,
+            relative_humidity_pct=relative_humidity_pct,
+            airflow_m_s=airflow_m_s,
+            soil_texture=soil_texture,
         )
         for name, params in named
     )

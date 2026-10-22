@@ -30,7 +30,7 @@ _BAND_FIELDS = (
 )
 
 
-def water_band_mm_day(params):
+def water_band_mm_day(params, *, allow_unverified=False):
     """Verified water band as (abs min, opt min, opt max, abs max) in mm/day.
 
     The dataset stores mm per crop cycle; this divides by water_cycle_days.
@@ -41,18 +41,22 @@ def water_band_mm_day(params):
     days = getattr(params, "water_cycle_days", None)
     if any(value is None for value in values) or days is None:
         return None
-    if not getattr(params, "water_band_verified", False):
+    if (
+        not allow_unverified
+        and not getattr(params, "water_band_verified", False)
+    ):
         return None
     return tuple(value / days for value in values)
 
-
-def water_requirement_mm_day(params):
+def water_requirement_mm_day(params, *, allow_unverified=False):
     """Daily water requirement: midpoint of the optimal band, in mm/day."""
-    band = water_band_mm_day(params)
+    band = water_band_mm_day(
+        params,
+        allow_unverified=allow_unverified,
+    )
     if band is None:
         return None
     return (band[1] + band[2]) / 2
-
 
 @dataclass(frozen=True)
 class WaterAllocation:

@@ -71,7 +71,13 @@ def convert_numeric_columns(df):
     return df
 
 
-def configure_soil_model(crop, water_mm_day, requirement_mm_day, npk_kg_ha):
+def configure_soil_model(
+    crop,
+    water_mm_day,
+    requirement_mm_day,
+    npk_kg_ha,
+    soil_texture=None,
+):
     """Apply the water supply and fertilizer to this crop's soil model.
 
     `crop` must be a private copy, so the shared CROPS objects are never
@@ -84,6 +90,20 @@ def configure_soil_model(crop, water_mm_day, requirement_mm_day, npk_kg_ha):
             "water budget and fertilizer inputs are not applied."
         ]
 
+    problems = []
+
+    # Apply the selected texture before configuring this run's water and
+    # fertilizer. set_texture() resets soil state, so it must happen first.
+    if soil_texture is not None:
+        set_texture = getattr(soil, "set_texture", None)
+        if callable(set_texture):
+            set_texture(soil_texture)
+        else:
+            problems.append(
+                f"the soil model does not support changing texture to "
+                f"{soil_texture!r}; its existing texture is retained."
+            )
+
     # One irrigation event per day delivering this crop's share of the budget.
     soil.water_balance.irrigation = IrrigationSchedule(
         interval_days=1, amount_mm=water_mm_day
@@ -95,12 +115,15 @@ def configure_soil_model(crop, water_mm_day, requirement_mm_day, npk_kg_ha):
     if ledger is not None:
         if requirement_mm_day is not None:
             ledger.reference_demand_mm_day = requirement_mm_day
-        rates = nutrient_rates(crop.parameters)
+        rates = nutrient_rates(
+            crop.parameters,
+            allow_unverified=True,
+        )
         if rates is not None and hasattr(ledger, "set_recommended"):
             midpoints = tuple((low + high) / 2 for low, high, _ in rates.values())
             ledger.set_recommended(crop.parameters.name, midpoints)
 
-    return []
+    return problems
 
 
 def build_greenhouse(s: "SidebarSettings") -> GreenhouseConfig:
@@ -121,12 +144,26 @@ def build_greenhouse(s: "SidebarSettings") -> GreenhouseConfig:
 def run_all_crops(s: "SidebarSettings") -> SimulationOutcome:
     greenhouse = build_greenhouse(s)
     frames, warnings, errors = [], [], []
-
+    # Use one consistent requirement policy for the full simulation. Many
+    # current crop water bands are provisional, so allow them here while the
+    # UI labels them as unverified. Missing bands still use the shared fallback.
     requirements = {
-        name: water_requirement_mm_day(CROPS[name].parameters)
+        name: water_requirement_mm_day(
+            CROPS[name].parameters,
+            allow_unverified=True,
+        )
         for name in s.selected_crops
     }
-    allocation = allocate_water_budget(s.water_budget_mm_day, requirements)
+    allocation = allocate_water_budget(
+        s.water_budget_mm_day,
+        requirements,
+    )
+    for crop_name in allocation.defaulted:
+        warnings.append(
+            f"{crop_name}: no usable water requirement is available; "
+            "the provisional 4.0 mm/day fallback is used to split the "
+            "greenhouse water budget."
+        )
 
     for crop_name in s.selected_crops:
         try:
@@ -137,6 +174,7 @@ def run_all_crops(s: "SidebarSettings") -> SimulationOutcome:
                 allocation.supply_mm_day[crop_name],
                 requirements[crop_name],
                 s.fertilizer_npk,
+                soil_texture=s.soil_texture,
             )
             df = normalize_results(
                 run_simulation(crop, greenhouse, s.simulation_days, s.start_date),

@@ -525,6 +525,21 @@ class DemandLedger:
 # Everything marked ASSUMPTION is a placeholder, not a sourced value.
 # --------------------------------------------------------------------------- #
 class TextureSoilFertilizerModel(SoilFertilizerModel):
+    def set_texture(self, soil: str | SoilTexture) -> None:
+    # """Replace the soil texture while preserving the water-balance settings."""
+    
+        current = self.water_balance
+
+        self.water_balance = WaterBalance(
+            SoilProfile.build(soil),
+            current.irrigation,
+            root_zone_depth_m=current.root_zone_depth_m,
+            depletion_fraction=current.depletion_fraction,
+            initial_water_fraction=current.initial_water_fraction,
+        )
+
+        self._reset()
+
     def __init__(
         self,
         soil: str | SoilTexture = "loam",
