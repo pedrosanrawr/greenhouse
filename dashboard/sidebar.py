@@ -8,6 +8,8 @@ from dashboard.config import (
     COVER_TYPE,
     DEFAULT_SIMULATION_DAYS,
     GREENHOUSE_PRESETS,
+    MAX_SELECTED_CROPS,
+    MIN_SELECTED_CROPS,
     WEATHER_END_DATE,
     WEATHER_START_DATE,
 )
@@ -74,19 +76,40 @@ def render_sidebar() -> SidebarSettings:
         st.subheader("1. Crop selection")
 
         crop_names = list(CROPS.keys())
-        default_crops = ["Tomato"] if "Tomato" in crop_names else crop_names[:1]
+        default_crops = crop_names[:MIN_SELECTED_CROPS]
+        if "Tomato" in crop_names:
+            default_crops = ["Tomato"] + [
+                c for c in crop_names if c != "Tomato"
+            ][: MIN_SELECTED_CROPS - 1]
+
+        # A session that was started before the cap existed can still hold more
+        # than MAX_SELECTED_CROPS entries, which the widget rejects outright.
+        # Trim it before the widget is created so the session recovers.
+        selection_key = "crop_selection"
+        stored = st.session_state.get(selection_key)
+        if stored is None:
+            st.session_state[selection_key] = default_crops
+        elif len(stored) > MAX_SELECTED_CROPS:
+            st.session_state[selection_key] = stored[:MAX_SELECTED_CROPS]
 
         selected_crops = st.multiselect(
             "Crops to simulate",
             options=crop_names,
-            default=default_crops,
-            help="Selected crops share the same greenhouse and water budget.",
+            key=selection_key,
+            max_selections=MAX_SELECTED_CROPS,
+            help=(
+                f"Select {MIN_SELECTED_CROPS} to {MAX_SELECTED_CROPS} crops. "
+                "Selected crops share the same greenhouse and water budget."
+            ),
         )
 
-        if selected_crops:
-            st.caption(f"{len(selected_crops)} crop(s) selected")
+        if len(selected_crops) < MIN_SELECTED_CROPS:
+            st.warning(
+                f"Select at least {MIN_SELECTED_CROPS} crops "
+                f"({len(selected_crops)} selected)."
+            )
         else:
-            st.warning("Select at least one crop.")
+            st.caption(f"{len(selected_crops)} crop(s) selected")
 
         st.divider()
 

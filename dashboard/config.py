@@ -9,6 +9,11 @@ WEATHER_START_DATE = date(2001, 1, 1)
 WEATHER_END_DATE = date(2025, 12, 31)
 DEFAULT_SIMULATION_DAYS = 120
 
+# How many crops a run may compare at once. The sidebar caps the selection at
+# MAX_SELECTED_CROPS and the app does not run below MIN_SELECTED_CROPS.
+MIN_SELECTED_CROPS = 3
+MAX_SELECTED_CROPS = 6
+
 COVER_TYPE = "Polyethylene film, single layer"
 COVER_PAR_TRANSMITTANCE = 0.860
 
