@@ -1,7 +1,6 @@
 """Tomato baseline configuration and generic model selections."""
 from data.models.generic_growth import GenericCropGrowthModel
 from data.models.soil import NutrientApplication, TextureSoilFertilizerModel
-from data.models.generic_yield import GenericYieldModel
 from data.models.types import CropParameters
 from data.plants.base import CropDefinition
 from data.plants.tomato.tomato_yield import TomatoYieldModel
@@ -12,7 +11,7 @@ from data.plants.tomato.tomato_yield import TomatoYieldModel
 TOMATO_PARAMETERS = CropParameters(
     name="Tomato",
     t_base=7.0,
-    t_opt=24.0,  # TEST VALUE: midpoint of the supplied 20–27 C optimum band
+    t_opt=23.5,  # midpoint of the supplied 20–27 C optimum band
     t_max=35.0,
     t_abs_min=7.0,
     t_opt_min=20.0,
@@ -47,6 +46,20 @@ TOMATO_PARAMETERS = CropParameters(
     p2o5_rec_min_kg_ha=50, p2o5_rec_max_kg_ha=80,                        # DUMMY
     k2o_rec_min_kg_ha=60, k2o_rec_max_kg_ha=100,                         # DUMMY
     nutrient_rates_verified=True,
+    # Workbook ID 1: FAO Table 14 seasonal crop-water need 400-800 mm/cycle.
+    # abs_min = 0.5 x 400, opt band = 400-800, abs_max = 1.25 x 800. The outer
+    # bounds are model assumptions, not published biological limits. The workbook
+    # still flags this band as unverified (water_band_verified = FALSE).
+    water_abs_min_mm=200,
+    water_opt_min_mm=400,
+    water_opt_max_mm=800,
+    water_abs_max_mm=1000,
+    water_cycle_days=158,  # FAO typical-cycle midpoint
+    water_band_verified=False,
+    n_rec_min_kg_ha=100, n_rec_max_kg_ha=180,  # workbook
+    p2o5_rec_min_kg_ha=50, p2o5_rec_max_kg_ha=90,  # workbook
+    k2o_rec_min_kg_ha=50, k2o_rec_max_kg_ha=90,  # workbook
+    nutrient_rates_verified=False,
     maintenance={
         "leaf": 0.010,  # TEST VALUE
         "stem": 0.003,  # TEST VALUE
