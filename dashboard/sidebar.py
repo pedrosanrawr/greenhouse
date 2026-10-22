@@ -29,7 +29,6 @@ class SidebarSettings:
     preset_name: str
     temperature: float
     airflow: float
-    co2_ppm: float
     relative_humidity_pct: float
     water_budget_mm_day: float
     fertilizer_n_kg_ha: float
@@ -99,7 +98,7 @@ def render_sidebar() -> SidebarSettings:
         )
         defaults = GREENHOUSE_PRESETS[preset_name]
 
-        with st.expander("Temperature and airflow", expanded=True):
+        with st.expander("Temperature and air conditions", expanded=True):
             temperature = st.slider(
                 "Temperature (°C)",
                 min_value=0.0,
@@ -107,26 +106,30 @@ def render_sidebar() -> SidebarSettings:
                 value=defaults["temperature"],
                 step=0.5,
             )
+
             airflow = st.slider(
-                "Airflow (m/s)",
+                "Air speed at crop canopy (m/s)",
                 min_value=0.0,
-                max_value=5.0,
+                max_value=1.5,
                 value=defaults["airflow"],
-                step=0.1,
+                step=0.05,
+                help=(
+                    "Use the air speed at or near the plant canopy, "
+                    "not the fan outlet speed."
+                ),
             )
-            co2_ppm = st.number_input(
-                "CO₂ (ppm)",
-                min_value=200.0,
-                max_value=2000.0,
-                value=426.0,
-                step=10.0,
-            )
+
             relative_humidity_pct = st.slider(
                 "Relative humidity (%)",
                 min_value=10.0,
                 max_value=100.0,
                 value=70.0,
                 step=1.0,
+            )
+
+            st.caption(
+                "CO₂ is held fixed at the model reference concentration "
+                "of 430 ppm."
             )
 
         with st.expander("Water and fertilizer", expanded=True):
@@ -237,7 +240,6 @@ def render_sidebar() -> SidebarSettings:
         preset_name=preset_name,
         temperature=temperature,
         airflow=airflow,
-        co2_ppm=co2_ppm,
         relative_humidity_pct=relative_humidity_pct,
         water_budget_mm_day=water_budget_mm_day,
         fertilizer_n_kg_ha=fertilizer_n,

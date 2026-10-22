@@ -4,7 +4,7 @@ import streamlit as st
 from dashboard.charts import line_chart
 from dashboard.config import ENVIRONMENT_COLUMNS
 from dashboard.utils import first_existing_column
-
+from data.models.air import DEFAULT_REFERENCE_CO2_PPM
 
 def render_environment(df):
     available = {}
@@ -53,7 +53,15 @@ def render_environment_section(df, settings):
 
     cols[0].metric("Temperature", f"{settings.temperature:.1f} °C")
     cols[1].metric("Airflow", f"{settings.airflow:.2f} m/s")
-    cols[2].metric("CO₂", f"{settings.co2_ppm:.0f} ppm")
+    cols[2].metric(
+        "CO₂ reference",
+        f"{DEFAULT_REFERENCE_CO2_PPM:.0f} ppm",
+        help=(
+            "Fixed for all runs. The crop parameter workbook has no "
+            "crop-specific CO₂-response parameter, so CO₂ does not "
+            "currently change simulated growth."
+        ),
+    )
     cols[3].metric(
         "Relative humidity",
         f"{settings.relative_humidity_pct:.0f}%",

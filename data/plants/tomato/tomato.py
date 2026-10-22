@@ -24,6 +24,19 @@ TOMATO_PARAMETERS = CropParameters(
     lue=2.5,  # TEST VALUE
     extinction_k=0.7,  # TEST VALUE
     sla=0.03,  # TEST VALUE, m²/g
+    # Air-response profile from Crop_Database: Tomato
+    vpd_low_limit_kpa=0.2,
+    vpd_opt_low_kpa=0.95,
+    vpd_opt_high_kpa=1.58,
+    vpd_high_limit_kpa=2.2,
+    vpd_min_factor=0.2,
+
+    airflow_low_limit_m_s=0.05,
+    airflow_opt_low_m_s=0.5,
+    airflow_opt_high_m_s=1.0,
+    airflow_high_limit_m_s=1.2,
+    airflow_min_factor=0.2,
+    
     water_abs_min_mm=300,   # DUMMY test value, not sourced
     water_opt_min_mm=400,   # DUMMY
     water_opt_max_mm=600,   # DUMMY

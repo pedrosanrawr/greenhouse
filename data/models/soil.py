@@ -633,7 +633,7 @@ class TextureSoilFertilizerModel(SoilFertilizerModel):
     ) -> ResourceAvailability:
         self._advance_to(int(day_index))
         self.demand_ledger.register(crop)  # called directly so its warning points at the caller
-        water = self.water_balance.factor(self.demand_ledger.pending().water_mm)
+        water = self.water_balance.factor()
         nutrient = self.nutrient_pools.factor()
         if self.combine_with_config_factors:
             water *= clamp01(getattr(greenhouse, "water_factor", 1.0))
