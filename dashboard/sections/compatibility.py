@@ -362,4 +362,4 @@ def render_compatibility(settings, df):
     with st.expander("Temperature fit"):
         _render_fit_strips(params_by_name, result, settings.temperature)
 
-    st.caption(CAPTION)
+    # st.caption(CAPTION)
