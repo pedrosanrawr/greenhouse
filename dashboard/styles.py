@@ -101,6 +101,10 @@ _CSS = """
         padding: 0.5rem 0.75rem;
     }
 
+    .st-key-compatibility_interpretation {
+        border-width: 1.5px !important;
+    }
+
     /* Metric cards */
     [data-testid="stMetric"] {
         padding: 10px 14px;

@@ -59,6 +59,59 @@ def _render_water_summary(result: CompatibilityResult):
     )
 
 
+def _render_interpretation(result: CompatibilityResult, height: int):
+    """Explain what the compatibility scores say about this scenario."""
+    scored = sorted(
+        (crop for crop in result.crops if crop.score is not None),
+        key=lambda crop: crop.score,
+        reverse=True,
+    )
+    excluded = [crop for crop in result.crops if crop.score is None]
+
+    if not scored:
+        paragraph = (
+            "No crops could be scored because verified temperature "
+            "requirements are unavailable."
+        )
+    else:
+        top = scored[0]
+        weakest = scored[-1]
+        if result.group_score is not None:
+            fit = (
+                "strong" if result.group_score >= 0.75 else
+                "partial" if result.group_score >= 0.45 else "weak"
+            )
+            paragraph = (
+                f"Overall fit is {fit} at {result.group_score:.2f} out of 1.00. "
+            )
+        else:
+            paragraph = "A group score needs at least two scored crops. "
+        paragraph += (
+            f"{top.crop} is the closest match ({top.score:.2f}), while "
+            f"{weakest.crop} needs the most attention ({weakest.score:.2f}). "
+        )
+        if result.optimal_band_overlap_c is not None:
+            low, high = result.optimal_band_overlap_c
+            paragraph += f"Their shared optimal temperature range is {low:g} to {high:g} °C. "
+        elif result.group_score is not None:
+            paragraph += "The crops do not share an optimal temperature range. "
+        if excluded:
+            paragraph += (
+                f"{len(excluded)} crop(s) were omitted because verified "
+                "temperature requirements are unavailable. "
+            )
+        paragraph += (
+            "Scores combine the available temperature, cycle, light, "
+            "water, and nutrient fits."
+        )
+
+    with st.container(
+        height=height, border=True, key="compatibility_interpretation"
+    ):
+        st.markdown("**Interpretation**")
+        st.write(paragraph)
+
+
 def _render_summary(result: CompatibilityResult):
     scored = [c for c in result.crops if c.score is not None]
 
@@ -97,7 +150,7 @@ def _render_summary(result: CompatibilityResult):
 # BAR CHART (right column)
 # ============================================================
 
-def _render_bars(result: CompatibilityResult):
+def _render_bars(result: CompatibilityResult, height: int):
     scored = sorted(
         (c for c in result.crops if c.score is not None),
         key=lambda c: c.score,
@@ -105,8 +158,8 @@ def _render_bars(result: CompatibilityResult):
     unscored = [c for c in result.crops if c.score is None]
 
     fig = go.Figure()
-
-    # Unscored crops sit at the bottom as labelled rows with no bar.
+    # Keep unscored crops visible as named rows, with more headroom so the
+    # top category label does not get clipped by Plotly.
     for crop in unscored:
         fig.add_trace(
             go.Bar(
@@ -114,7 +167,7 @@ def _render_bars(result: CompatibilityResult):
                 y=[crop.crop],
                 orientation="h",
                 marker={"color": "rgba(0,0,0,0)"},
-                text=[f"not scored: {crop.excluded_reason}"],
+                text=[f"not scored: {crop.excluded_reason or 'requirements unavailable'}"],
                 textposition="outside",
                 textfont={"color": MUTED_COLOR},
                 cliponaxis=False,
@@ -160,12 +213,11 @@ def _render_bars(result: CompatibilityResult):
             )
         )
 
-    n_rows = len(scored) + len(unscored)
-    plot_layout(fig, height=90 + 46 * max(n_rows, 1))
+    plot_layout(fig, height=height)
     fig.update_layout(
         hovermode="closest",
         showlegend=False,
-        margin={"l": 10, "r": 30, "t": 10, "b": 10},
+        margin={"l": 10, "r": 30, "t": 30, "b": 10},
     )
     fig.update_xaxes(
         range=[0, 1.12],
@@ -341,12 +393,16 @@ def render_compatibility(settings, df):
         st.error(f"Compatibility could not be calculated: {exc}")
         return
 
-    left, right = st.columns([1, 3])
+    chart_height = 110 + 46 * max(len(result.crops), 1)
+
+    left, chart, interpretation = st.columns([1, 2.2, 1.35])
     with left:
         _render_summary(result)
         _render_water_summary(result)
-    with right:
-        _render_bars(result)
+    with chart:
+        _render_bars(result, chart_height)
+    with interpretation:
+        _render_interpretation(result, chart_height)
 
     excluded = [c for c in result.crops if c.score is None]
     if excluded and result.group_score is not None:
@@ -362,4 +418,4 @@ def render_compatibility(settings, df):
     with st.expander("Temperature fit"):
         _render_fit_strips(params_by_name, result, settings.temperature)
 
-    # st.caption(CAPTION)
+    st.caption(CAPTION)
