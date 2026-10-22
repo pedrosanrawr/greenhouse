@@ -22,6 +22,19 @@ TARO_PARAMETERS = CropParameters(
     lue=2.4,  # TEST VALUE
     extinction_k=0.7,  # TEST VALUE
     sla=0.028,  # TEST VALUE, m²/g
+    # Air-response profile from Crop_Database: Taro
+    vpd_low_limit_kpa=0.2,
+    vpd_opt_low_kpa=0.4,
+    vpd_opt_high_kpa=1.1,
+    vpd_high_limit_kpa=2.2,
+    vpd_min_factor=0.2,
+
+    airflow_low_limit_m_s=0.05,
+    airflow_opt_low_m_s=0.2,
+    airflow_opt_high_m_s=0.7,
+    airflow_high_limit_m_s=1.2,
+    airflow_min_factor=0.2,
+
     # Workbook: water band 250-875 mm/cycle (abs_min = 0.5 x opt_min, abs_max = 1.25 x opt_max).
     water_abs_min_mm=250, water_opt_min_mm=500, water_opt_max_mm=700, water_abs_max_mm=875,  # workbook
     water_cycle_days=240,  # workbook

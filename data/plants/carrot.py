@@ -22,6 +22,19 @@ CARROT_PARAMETERS = CropParameters(
     lue=2.2,  # TEST VALUE
     extinction_k=0.8,  # TEST VALUE
     sla=0.02,  # TEST VALUE, m²/g
+    # Air-response profile from Crop_Database: Carrot
+    vpd_low_limit_kpa=0.2,
+    vpd_opt_low_kpa=0.5,
+    vpd_opt_high_kpa=1.1,
+    vpd_high_limit_kpa=2.2,
+    vpd_min_factor=0.2,
+
+    airflow_low_limit_m_s=0.05,
+    airflow_opt_low_m_s=0.2,
+    airflow_opt_high_m_s=0.7,
+    airflow_high_limit_m_s=1.2,
+    airflow_min_factor=0.2,
+
     # Workbook: water band 150-625 mm/cycle (abs_min = 0.5 x opt_min, abs_max = 1.25 x opt_max).
     water_abs_min_mm=150, water_opt_min_mm=300, water_opt_max_mm=500, water_abs_max_mm=625,  # workbook
     water_cycle_days=125,  # workbook

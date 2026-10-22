@@ -36,16 +36,6 @@ TOMATO_PARAMETERS = CropParameters(
     airflow_high_limit_m_s=1.2,
     airflow_min_factor=0.2,
     
-    water_abs_min_mm=300,   # DUMMY test value, not sourced
-    water_opt_min_mm=400,   # DUMMY
-    water_opt_max_mm=600,   # DUMMY
-    water_abs_max_mm=900,   # DUMMY
-    water_cycle_days=100,   # DUMMY
-    water_band_verified=True,
-    n_rec_min_kg_ha=100, n_rec_max_kg_ha=150, n_excess_kg_ha=300,        # DUMMY
-    p2o5_rec_min_kg_ha=50, p2o5_rec_max_kg_ha=80,                        # DUMMY
-    k2o_rec_min_kg_ha=60, k2o_rec_max_kg_ha=100,                         # DUMMY
-    nutrient_rates_verified=True,
     # Workbook ID 1: FAO Table 14 seasonal crop-water need 400-800 mm/cycle.
     # abs_min = 0.5 x 400, opt band = 400-800, abs_max = 1.25 x 800. The outer
     # bounds are model assumptions, not published biological limits. The workbook
