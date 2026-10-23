@@ -102,6 +102,7 @@ def render_sidebar() -> SidebarSettings:
             options=crop_names,
             key=selection_key,
             max_selections=MAX_SELECTED_CROPS,
+            select_all=False,
             help=(
                 f"Select {MIN_SELECTED_CROPS} to {MAX_SELECTED_CROPS} crops. "
                 "Selected crops share the same greenhouse and water budget."
