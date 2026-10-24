@@ -228,7 +228,7 @@ def render_details(df, crops, settings):
         "Total biomass",
         "Daily production",
         "Harvestable",
-        "Stress timeline 🧪",
+        "Stress timeline",
         "Environment",
         "Data",
     ])

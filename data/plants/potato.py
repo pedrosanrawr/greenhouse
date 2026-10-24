@@ -5,30 +5,19 @@ from data.models.single_harvest_yield import StemTuberYieldModel
 from data.models.types import CropParameters
 from data.plants.base import CropDefinition
 
-# Workbook (ID 29, Solanum tuberosum): EcoCrop T 7 / 15-25 / 30 C, cycle 90-160 d,
-# first harvest 90-160 d (cycle used as a proxy), reference yield 1.0-3.5 kg/m2
-# (typical 2.25) of fresh tubers, spacing 25 x 60 cm.
-# The workbook flags potato as a cool/highland crop: lowland greenhouse use may
-# be infeasible without strong cooling. Everything marked TEST VALUE is provisional.
-#
-# total_biomass_g derivation (TEST VALUE chain):
-#   0.25 m x 0.60 m = 0.15 m2/plant -> 2.25 kg/m2 x 0.15 = 0.34 kg fresh tubers
-#   x ~20% dry matter (TEST) = ~67 g dry tubers
-#   tuber share of total growth with the ratios below = ~0.63
-#   -> ~107 g growth + initial biomass = ~108 g
 POTATO_PARAMETERS = CropParameters(
     name="Potato",
     t_base=7.0,
-    t_opt=20.0,  # TEST VALUE: midpoint of the supplied 15-25 C optimum band
+    t_opt=20.0, 
     t_max=30.0,
     t_abs_min=7.0,
     t_opt_min=15.0,
     t_opt_max=25.0,
     t_abs_max=30.0,
     temperature_band_verified=True,
-    lue=2.3,  # TEST VALUE
-    extinction_k=0.75,  # TEST VALUE
-    sla=0.022,  # TEST VALUE, m²/g
+    lue=2.3,   
+    extinction_k=0.75,
+    sla=0.022,  
     # Air-response profile from Crop_Database: Potato
     vpd_low_limit_kpa=0.2,
     vpd_opt_low_kpa=0.5,
@@ -42,74 +31,72 @@ POTATO_PARAMETERS = CropParameters(
     airflow_high_limit_m_s=1.2,
     airflow_min_factor=0.2,
 
-    # Workbook ID 29: FAO Table 14 seasonal crop-water need 500-700 mm/cycle.
-    # abs_min = 0.5 x 500, opt band = 500-700, abs_max = 1.25 x 700. Outer
-    # bounds are model assumptions. Workbook flags the band unverified.
+
     water_abs_min_mm=250,
     water_opt_min_mm=500,
     water_opt_max_mm=700,
     water_abs_max_mm=875,
     water_cycle_days=125,
     water_band_verified=False,
-    n_rec_min_kg_ha=150, n_rec_max_kg_ha=200,  # workbook
-    p2o5_rec_min_kg_ha=100, p2o5_rec_max_kg_ha=150,  # workbook
-    k2o_rec_min_kg_ha=100, k2o_rec_max_kg_ha=150,  # workbook
+    n_rec_min_kg_ha=150, n_rec_max_kg_ha=200,  
+    p2o5_rec_min_kg_ha=100, p2o5_rec_max_kg_ha=150,  
+    k2o_rec_min_kg_ha=100, k2o_rec_max_kg_ha=150,  
     nutrient_rates_verified=False,
     maintenance={
-        "leaf": 0.010,  # TEST VALUE
-        "stem": 0.003,  # TEST VALUE
-        "root": 0.006,  # TEST VALUE
+        "leaf": 0.010,  
+        "stem": 0.003,  
+        "root": 0.006,  
         "flower": 0.0,
         "fruit": 0.0,
         "root_tuber": 0.0,
-        "stem_tuber": 0.001,  # TEST VALUE
+        "stem_tuber": 0.001,  
     },
-    # Not read by the engine any more; kept because the field is required.
+
     sink_demand={
-        "leaf": 0.12,  # TEST VALUE, g/plant/day
-        "stem": 0.06,  # TEST VALUE
-        "root": 0.04,  # TEST VALUE
+        "leaf": 0.12,  
+        "stem": 0.06,  
+        "root": 0.04,  
         "flower": 0.0,
         "fruit": 0.0,
         "root_tuber": 0.0,
-        "stem_tuber": 0.45,  # TEST VALUE
+        "stem_tuber": 0.45,
     },
     biomass_ratio={
         "vegetative": {  # emergence and canopy build-up
-            "leaf": 0.50,  # TEST VALUE
-            "stem": 0.30,  # TEST VALUE
-            "root": 0.20,  # TEST VALUE
+            "leaf": 0.50,  
+            "stem": 0.30,  
+            "root": 0.20,  
         },
         "tuber_initiation": {  # stolon tips start to swell
-            "leaf": 0.35,  # TEST VALUE
-            "stem": 0.20,  # TEST VALUE
-            "root": 0.10,  # TEST VALUE
-            "stem_tuber": 0.35,  # TEST VALUE
+            "leaf": 0.35,  
+            "stem": 0.20,  
+            "root": 0.10,  
+            "stem_tuber": 0.35,  
         },
         "bulking": {  # tubers fill
-            "leaf": 0.15,  # TEST VALUE
-            "stem": 0.07,  # TEST VALUE
-            "root": 0.03,  # TEST VALUE
-            "stem_tuber": 0.75,  # TEST VALUE
+            "leaf": 0.15,  
+            "stem": 0.07,  
+            "root": 0.03,  
+            "stem_tuber": 0.75,  
         },
         "maturation": {  # canopy declining, nearly all growth to tubers
-            "leaf": 0.05,  # TEST VALUE
-            "stem": 0.03,  # TEST VALUE
-            "root": 0.02,  # TEST VALUE
-            "stem_tuber": 0.90,  # TEST VALUE
+            "leaf": 0.05,  
+            "stem": 0.03,  
+            "root": 0.02,  
+            "stem_tuber": 0.90,  
         },
     },
     phase_start_days={
-        "vegetative": 0,  # TEST VALUE
-        "tuber_initiation": 25,  # TEST VALUE
-        "bulking": 45,  # TEST VALUE
-        "maturation": 110,  # TEST VALUE
+        "vegetative": 0,   
+        "tuber_initiation": 25, 
+        "bulking": 45,   
+        "maturation": 110,   
     },
-    total_biomass_g=108.0,  # TEST VALUE: potential dry mass per plant at cycle end
+    total_biomass_g=108.0,   
     initial_biomass={
-        "leaf": 0.5,  # TEST VALUE, g/plant (sprout; seed piece not counted)
-        "stem": 0.5,  # TEST VALUE
-        "root": 0.2,  # TEST VALUE
+        "leaf": 0.5,   
+        "stem": 0.5,   
+        "root": 0.2,   
         "flower": 0.0,
         "fruit": 0.0,
         "root_tuber": 0.0,

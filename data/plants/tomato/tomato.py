@@ -6,8 +6,6 @@ from data.plants.base import CropDefinition
 from data.plants.tomato.tomato_yield import TomatoYieldModel
 
 # Temperature boundaries and broad timing ranges are based on the supplied
-# greenhouse crop spreadsheet. The 24 C optimum is a TEST VALUE midpoint.
-# Remaining coefficients and biomass values are provisional TEST VALUES.
 TOMATO_PARAMETERS = CropParameters(
     name="Tomato",
     t_base=7.0,
@@ -20,9 +18,9 @@ TOMATO_PARAMETERS = CropParameters(
     temperature_band_verified=True,
     dli_min=20,
     dli_opt=30,
-    lue=2.5,  # TEST VALUE
-    extinction_k=0.7,  # TEST VALUE
-    sla=0.03,  # TEST VALUE, m²/g
+    lue=2.5,
+    extinction_k=0.7,  
+    sla=0.03,  
     # Air-response profile from Crop_Database: Tomato
     vpd_low_limit_kpa=0.2,
     vpd_opt_low_kpa=0.95,
@@ -36,64 +34,58 @@ TOMATO_PARAMETERS = CropParameters(
     airflow_high_limit_m_s=1.2,
     airflow_min_factor=0.2,
     
-    # Workbook ID 1: FAO Table 14 seasonal crop-water need 400-800 mm/cycle.
-    # abs_min = 0.5 x 400, opt band = 400-800, abs_max = 1.25 x 800. The outer
-    # bounds are model assumptions, not published biological limits. The workbook
-    # still flags this band as unverified (water_band_verified = FALSE).
     water_abs_min_mm=200,
     water_opt_min_mm=400,
     water_opt_max_mm=800,
     water_abs_max_mm=1000,
-    water_cycle_days=158,  # FAO typical-cycle midpoint
+    water_cycle_days=158,  
     water_band_verified=False,
-    n_rec_min_kg_ha=100, n_rec_max_kg_ha=180,  # workbook
-    p2o5_rec_min_kg_ha=50, p2o5_rec_max_kg_ha=90,  # workbook
-    k2o_rec_min_kg_ha=50, k2o_rec_max_kg_ha=90,  # workbook
+    n_rec_min_kg_ha=100, n_rec_max_kg_ha=180,  
+    p2o5_rec_min_kg_ha=50, p2o5_rec_max_kg_ha=90,
+    k2o_rec_min_kg_ha=50, k2o_rec_max_kg_ha=90,  
     nutrient_rates_verified=False,
     maintenance={
-        "leaf": 0.010,  # TEST VALUE
-        "stem": 0.003,  # TEST VALUE
-        "root": 0.006,  # TEST VALUE
-        "flower": 0.004,  # TEST VALUE
-        "fruit": 0.002,  # TEST VALUE
+        "leaf": 0.010,    
+        "stem": 0.003,    
+        "root": 0.006,    
+        "flower": 0.004,    
+        "fruit": 0.002,    
     },
     sink_demand={
-        "leaf": 0.20,  # TEST VALUE, g/plant/day
-        "stem": 0.10,  # TEST VALUE
-        "root": 0.08,  # TEST VALUE
-        "flower": 0.02,  # TEST VALUE
-        "fruit": 0.25,  # TEST VALUE
+        "leaf": 0.20,  
+        "stem": 0.10,    
+        "root": 0.08,    
+        "flower": 0.02,    
+        "fruit": 0.25,    
     },
-    # Fraction of new biomass allocated to each organ, per phase.
-    # Each phase sums to 1.0. Omitted organs (root_tuber, stem_tuber) are
-    # auto-filled with 0. Keep phases in development order.
+    
     biomass_ratio={
         "vegetative": {
-            "leaf": 0.50,  # TEST VALUE
-            "stem": 0.30,  # TEST VALUE
-            "root": 0.20,  # TEST VALUE
+            "leaf": 0.50,    
+            "stem": 0.30,    
+            "root": 0.20,    
         },
         "flowering": {
-            "leaf": 0.35,  # TEST VALUE
-            "stem": 0.30,  # TEST VALUE
-            "root": 0.15,  # TEST VALUE
-            "flower": 0.10,  # TEST VALUE
-            "fruit": 0.10,  # TEST VALUE
+            "leaf": 0.35,    
+            "stem": 0.30,    
+            "root": 0.15,    
+            "flower": 0.10,    
+            "fruit": 0.10,  
         },
         "fruiting": {
-            "leaf": 0.20,  # TEST VALUE
-            "stem": 0.10,  # TEST VALUE
-            "root": 0.08,  # TEST VALUE
-            "flower": 0.02,  # TEST VALUE
-            "fruit": 0.60,  # TEST VALUE
+            "leaf": 0.20,   
+            "stem": 0.10,    
+            "root": 0.08,    
+            "flower": 0.02,    
+            "fruit": 0.60,   
         },
     },
     initial_biomass={
-        "leaf": 1.0,  # TEST VALUE, g/plant
-        "stem": 0.5,  # TEST VALUE
-        "root": 0.3,  # TEST VALUE
-        "flower": 0.0,  # TEST VALUE
-        "fruit": 0.0,  # TEST VALUE
+        "leaf": 1.0,  
+        "stem": 0.5,    
+        "root": 0.3,    
+        "flower": 0.0,
+        "fruit": 0.0,  
     },
     harvestable_organ="fruit",
     cycle_min_days=70,
@@ -102,11 +94,11 @@ TOMATO_PARAMETERS = CropParameters(
     first_harvest_max_days=130,
         # Day each phase starts. Fruiting begins before first_harvest_min_days (70).
     phase_start_days={
-        "vegetative": 0,   # TEST VALUE
-        "flowering": 35,   # TEST VALUE
-        "fruiting": 65,    # TEST VALUE
+        "vegetative": 0,   #  
+        "flowering": 35,   #  
+        "fruiting": 65,    #  
     },
-    total_biomass_g=150.0,  # TEST VALUE: potential dry mass per plant at cycle end
+    total_biomass_g=150.0,  #  : potential dry mass per plant at cycle end
 )
 
 TOMATO = CropDefinition(
