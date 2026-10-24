@@ -116,7 +116,7 @@ def test_vpd_factor_is_neutral_without_crop_parameters():
     assert vpd_response_factor(0.8) == pytest.approx(1.0)
 
 
-# Illustrative test values only; these are not validated
+# Illustrative  s only; these are not validated
 # crop-specific parameters for use in the simulation.
 VPD_TEST_PROFILE = {
     "low_limit_kpa": 0.2,
@@ -168,7 +168,7 @@ def test_airflow_factor_is_neutral_without_crop_parameters():
     assert airflow_response_factor(0.5) == pytest.approx(1.0)
 
 
-# Illustrative test values only; these are not validated
+# Illustrative  s only; these are not validated
 # crop-specific parameters for use in the simulation.
 AIRFLOW_TEST_PROFILE = {
     "low_limit_m_s": 0.0,

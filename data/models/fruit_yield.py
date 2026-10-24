@@ -17,7 +17,7 @@ What it models (all in grams of dry mass per plant, like the rest of the engine)
   marketable fruit is picked. The engine removes it from the fruit organ and
   keeps a cumulative total.
 
-Every default in FruitYieldParameters is a tomato-like TEST VALUE. None is
+Every default in FruitYieldParameters is a tomato-like  . None is
 sourced or calibrated, and none should be quoted as crop physiology. Another
 fruit crop should pass its own FruitYieldParameters, with a cited source
 beside each value.
@@ -50,21 +50,21 @@ def _clamp01(value: float) -> float:
 @dataclass(frozen=True)
 class FruitYieldParameters:
     # ---- ripening: thermal time from fruit set to ripe
-    ripening_base_c: float = 10.0  # TEST VALUE: base temperature for ripening
-    ripening_degree_days: float = 500.0  # TEST VALUE: degree-days from set to ripe
+    ripening_base_c: float = 10.0  #  : base temperature for ripening
+    ripening_degree_days: float = 500.0  #  : degree-days from set to ripe
 
     # ---- fruit set under heat: 1.0 up to onset, falling linearly to the minimum at the limit
-    heat_onset_c: float = 26.0  # TEST VALUE
-    heat_limit_c: float = 32.0  # TEST VALUE
-    heat_min_set_fraction: float = 0.2  # TEST VALUE: share that still sets at/above the limit
+    heat_onset_c: float = 26.0  #  
+    heat_limit_c: float = 32.0  #  
+    heat_min_set_fraction: float = 0.2  #  : share that still sets at/above the limit
 
     # ---- quality under water stress: no loss at or above the threshold,
     #      loss grows linearly to max_quality_loss at a water factor of 0
-    water_quality_threshold: float = 0.8  # TEST VALUE
-    max_quality_loss: float = 0.3  # TEST VALUE
+    water_quality_threshold: float = 0.8  #  
+    max_quality_loss: float = 0.3  #  
 
     # ---- harvest rhythm
-    harvest_interval_days: int = 7  # TEST VALUE: weekly picking
+    harvest_interval_days: int = 7  #  : weekly picking
 
     def __post_init__(self) -> None:
         numbers = (

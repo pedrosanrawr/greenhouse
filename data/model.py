@@ -30,7 +30,7 @@ class Species:
 	cycle_max_days: int
 	first_harvest_min_days: int
 	first_harvest_max_days: int
-	# Realistic test values are explicitly marked in each crop file.
+	# Realistic  s are explicitly marked in each crop file.
 
 
 @dataclass(frozen=True)
@@ -84,7 +84,7 @@ def simulate(
 	f_temp = temperature_response(
 		greenhouse.temperature_c, species.t_base, species.t_opt, species.t_max
 	)
-	# TEST VALUE: airflow is captured by the UI but has no validated crop-specific
+	#  : airflow is captured by the UI but has no validated crop-specific
 	# response function yet. It is reported, not used to modify growth.
 	f_environment = np.clip(greenhouse.water_factor, 0.0, 1.0) * np.clip(
 		greenhouse.nutrient_factor, 0.0, 1.0
@@ -96,7 +96,7 @@ def simulate(
 		intercepted_fraction = 1.0 - np.exp(-species.extinction_k * max(lai, 0.0))
 
 		# Source: daily photosynthetic biomass gain. LUE and SLA are provisional
-		# test values in plants/tomato.py, not validated cultivar parameters.
+		#  s in plants/tomato.py, not validated cultivar parameters.
 		gross_assimilation = (
 			species.lue
 			* daily_par_mj_m2
@@ -107,7 +107,7 @@ def simulate(
 		)
 
 		# Maintenance respiration increases with temperature; Q10=2 is a common
-		# modelling approximation and is a TEST VALUE pending calibration.
+		# modelling approximation and is a   pending calibration.
 		q10 = 2.0 ** ((greenhouse.temperature_c - 25.0) / 10.0)
 		maintenance_respiration = q10 * sum(
 			species.maintenance.get(organ, 0.0) * biomass[organ]
@@ -142,7 +142,7 @@ def simulate(
 			reserve_g = available
 			limiting_factor = "no sink demand"
 
-		# TEST VALUE: 0.5% daily leaf senescence; replace with crop/phase-specific data.
+		#  : 0.5% daily leaf senescence; replace with crop/phase-specific data.
 		leaf_senescence_fraction = 0.005
 		for organ in ORGANS:
 			biomass[organ] += growth[organ]

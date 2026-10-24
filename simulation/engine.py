@@ -30,7 +30,7 @@ from data.plants.base import CropDefinition
 _CARBON_EPSILON = 1e-9
 
 # Unused assimilate is stored as reserve up to this fraction of living biomass;
-# anything above is discarded (feedback inhibition). Provisional TEST VALUE.
+# anything above is discarded (feedback inhibition). Provisional  .
 _RESERVE_CAP_FRACTION = 0.10
 
 

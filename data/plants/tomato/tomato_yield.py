@@ -1,6 +1,6 @@
 """Tomato yield model: the fruit model with tomato as its (provisional) defaults.
 
-All numbers live in FruitYieldParameters and are TEST VALUES. See fruit_yield.py.
+All numbers live in FruitYieldParameters and are  S. See fruit_yield.py.
 """
 from data.models.fruit_yield import FruitYieldModel, FruitYieldParameters
 

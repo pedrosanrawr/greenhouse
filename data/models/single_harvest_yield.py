@@ -51,7 +51,7 @@ class SingleHarvestParameters:
     heat_loss_per_day: float = 0.0
     water_threshold: float | None = None  # a day with water factor below this adds water_loss_per_day
     water_loss_per_day: float = 0.0
-    max_quality_loss: float = 0.5  # TEST VALUE: cap on the total loss; inactive unless a hook is on
+    max_quality_loss: float = 0.5  #  : cap on the total loss; inactive unless a hook is on
 
     def __post_init__(self) -> None:
         if self.harvest_age_days is not None and (

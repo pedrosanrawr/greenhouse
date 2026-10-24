@@ -9,7 +9,7 @@ from data.plants.base import CropDefinition
 # Workbook harvestable organ: Storage root. Harvest mode: Single harvest.
 # Temperature band, cycle, first-harvest, water and nutrient bands are from the
 # supplied crop workbook. Model coefficients, biomass ratios and total_biomass_g
-# are NOT in the workbook; they are PROVISIONAL TEST VALUES cloned from the
+# are NOT in the workbook; they are PROVISIONAL  S cloned from the
 # carrot archetype. The workbook still flags water/nutrient bands as unverified.
 
 CARROT_PARAMETERS = CropParameters(
@@ -19,9 +19,9 @@ CARROT_PARAMETERS = CropParameters(
     t_max=30,  # workbook absolute T max
     t_abs_min=3, t_opt_min=15, t_opt_max=24, t_abs_max=30,  # workbook
     temperature_band_verified=True,
-    lue=2.2,  # TEST VALUE
-    extinction_k=0.8,  # TEST VALUE
-    sla=0.02,  # TEST VALUE, m²/g
+    lue=2.2,  #  
+    extinction_k=0.8,  #  
+    sla=0.02,  #  , m²/g
     # Air-response profile from Crop_Database: Carrot
     vpd_low_limit_kpa=0.2,
     vpd_opt_low_kpa=0.5,
@@ -44,47 +44,47 @@ CARROT_PARAMETERS = CropParameters(
     k2o_rec_min_kg_ha=40, k2o_rec_max_kg_ha=60,  # workbook
     nutrient_rates_verified=False,  # workbook flags these rates unverified
     maintenance={
-        "leaf": 0.01,  # TEST VALUE
-        "stem": 0.003,  # TEST VALUE
-        "root": 0.006,  # TEST VALUE
-        "root_tuber": 0.001,  # TEST VALUE
+        "leaf": 0.01,  #  
+        "stem": 0.003,  #  
+        "root": 0.006,  #  
+        "root_tuber": 0.001,  #  
     },
     # Organ sink-demand coefficients read by the growth model each day.
     sink_demand={
-        "leaf": 0.25,  # TEST VALUE
-        "stem": 0.15,  # TEST VALUE
-        "root": 0.08,  # TEST VALUE
-        "root_tuber": 0.8,  # TEST VALUE
+        "leaf": 0.25,  #  
+        "stem": 0.15,  #  
+        "root": 0.08,  #  
+        "root_tuber": 0.8,  #  
     },
     biomass_ratio={
         "vegetative": {
-            "leaf": 0.45,  # TEST VALUE
-            "stem": 0.35,  # TEST VALUE
-            "root": 0.2,  # TEST VALUE
+            "leaf": 0.45,  #  
+            "stem": 0.35,  #  
+            "root": 0.2,  #  
         },
         "tuber_initiation": {
-            "leaf": 0.35,  # TEST VALUE
-            "stem": 0.25,  # TEST VALUE
-            "root": 0.1,  # TEST VALUE
-            "root_tuber": 0.3,  # TEST VALUE
+            "leaf": 0.35,  #  
+            "stem": 0.25,  #  
+            "root": 0.1,  #  
+            "root_tuber": 0.3,  #  
         },
         "bulking": {
-            "leaf": 0.12,  # TEST VALUE
-            "stem": 0.08,  # TEST VALUE
-            "root": 0.05,  # TEST VALUE
-            "root_tuber": 0.75,  # TEST VALUE
+            "leaf": 0.12,  #  
+            "stem": 0.08,  #  
+            "root": 0.05,  #  
+            "root_tuber": 0.75,  #  
         },
     },
     phase_start_days={
-        "vegetative": 0,  # TEST VALUE
-        "tuber_initiation": 27,  # TEST VALUE
-        "bulking": 52,  # TEST VALUE
+        "vegetative": 0,  #  
+        "tuber_initiation": 27,  #  
+        "bulking": 52,  #  
     },
-    total_biomass_g=90,  # TEST VALUE: potential dry mass per plant at cycle end
+    total_biomass_g=90,  #  : potential dry mass per plant at cycle end
     initial_biomass={
-        "leaf": 1.5,  # TEST VALUE, g/plant
-        "stem": 2.0,  # TEST VALUE, g/plant
-        "root": 0.2,  # TEST VALUE, g/plant
+        "leaf": 1.5,  #  , g/plant
+        "stem": 2.0,  #  , g/plant
+        "root": 0.2,  #  , g/plant
     },
     harvestable_organ="root_tuber",
     cycle_min_days=40, cycle_max_days=150,  # workbook

@@ -9,7 +9,7 @@ from data.plants.base import CropDefinition
 # Workbook harvestable organ: Leaves/tender tops. Harvest mode: Repeated harvest.
 # Temperature band, cycle, first-harvest, water and nutrient bands are from the
 # supplied crop workbook. Model coefficients, biomass ratios and total_biomass_g
-# are NOT in the workbook; they are PROVISIONAL TEST VALUES cloned from the
+# are NOT in the workbook; they are PROVISIONAL  S cloned from the
 # basil archetype. The workbook still flags water/nutrient bands as unverified.
 # Harvest mode is repeated harvest, but the shared models have no repeated-cut
 # mechanism for leaves: LeafyYieldModel takes the standing leaf mass once, at
@@ -24,9 +24,9 @@ BASIL_PARAMETERS = CropParameters(
     t_abs_min=7, t_opt_min=18, t_opt_max=27, t_abs_max=36,  # workbook
     temperature_band_verified=True,
     dli_min=15, dli_opt=25,  # workbook
-    lue=2.6,  # TEST VALUE
-    extinction_k=0.6,  # TEST VALUE
-    sla=0.035,  # TEST VALUE, m²/g
+    lue=2.6,  #  
+    extinction_k=0.6,  #  
+    sla=0.035,  #  , m²/g
     # Air-response profile from Crop_Database: Basil
     vpd_low_limit_kpa=0.2,
     vpd_opt_low_kpa=0.5,
@@ -49,37 +49,37 @@ BASIL_PARAMETERS = CropParameters(
     k2o_rec_min_kg_ha=30, k2o_rec_max_kg_ha=50,  # workbook
     nutrient_rates_verified=False,  # workbook flags these rates unverified
     maintenance={
-        "leaf": 0.012,  # TEST VALUE
-        "stem": 0.004,  # TEST VALUE
-        "root": 0.006,  # TEST VALUE
+        "leaf": 0.012,  #  
+        "stem": 0.004,  #  
+        "root": 0.006,  #  
     },
     # Organ sink-demand coefficients read by the growth model each day.
     sink_demand={
-        "leaf": 0.35,  # TEST VALUE
-        "stem": 0.1,  # TEST VALUE
-        "root": 0.06,  # TEST VALUE
+        "leaf": 0.35,  #  
+        "stem": 0.1,  #  
+        "root": 0.06,  #  
     },
     biomass_ratio={
         "vegetative": {
-            "leaf": 0.65,  # TEST VALUE
-            "stem": 0.2,  # TEST VALUE
-            "root": 0.15,  # TEST VALUE
+            "leaf": 0.65,  #  
+            "stem": 0.2,  #  
+            "root": 0.15,  #  
         },
         "regrowth": {
-            "leaf": 0.78,  # TEST VALUE
-            "stem": 0.14,  # TEST VALUE
-            "root": 0.08,  # TEST VALUE
+            "leaf": 0.78,  #  
+            "stem": 0.14,  #  
+            "root": 0.08,  #  
         },
     },
     phase_start_days={
-        "vegetative": 0,  # TEST VALUE
-        "regrowth": 67,  # TEST VALUE
+        "vegetative": 0,  #  
+        "regrowth": 67,  #  
     },
-    total_biomass_g=100,  # TEST VALUE: potential dry mass per plant at cycle end
+    total_biomass_g=100,  #  : potential dry mass per plant at cycle end
     initial_biomass={
-        "leaf": 1.0,  # TEST VALUE, g/plant
-        "stem": 0.3,  # TEST VALUE, g/plant
-        "root": 0.2,  # TEST VALUE, g/plant
+        "leaf": 1.0,  #  , g/plant
+        "stem": 0.3,  #  , g/plant
+        "root": 0.2,  #  , g/plant
     },
     harvestable_organ="leaf",
     cycle_min_days=80, cycle_max_days=270,  # workbook

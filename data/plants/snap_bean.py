@@ -9,7 +9,7 @@ from data.plants.tomato.tomato_yield import TomatoYieldModel
 # Workbook harvestable organ: Green pods. Harvest mode: Repeated harvest.
 # Temperature band, cycle, first-harvest, water and nutrient bands are from the
 # supplied crop workbook. Model coefficients, biomass ratios and total_biomass_g
-# are NOT in the workbook; they are PROVISIONAL TEST VALUES cloned from the
+# are NOT in the workbook; they are PROVISIONAL  S cloned from the
 # snap_bean archetype. The workbook still flags water/nutrient bands as unverified.
 
 SNAP_BEAN_PARAMETERS = CropParameters(
@@ -19,9 +19,9 @@ SNAP_BEAN_PARAMETERS = CropParameters(
     t_max=32,  # workbook absolute T max
     t_abs_min=7, t_opt_min=16, t_opt_max=25, t_abs_max=32,  # workbook
     temperature_band_verified=True,
-    lue=2.5,  # TEST VALUE
-    extinction_k=0.7,  # TEST VALUE
-    sla=0.03,  # TEST VALUE, m²/g
+    lue=2.5,  #  
+    extinction_k=0.7,  #  
+    sla=0.03,  #  , m²/g
     # Air-response profile from Crop_Database: Snap bean
     vpd_low_limit_kpa=0.2,
     vpd_opt_low_kpa=0.5,
@@ -44,51 +44,51 @@ SNAP_BEAN_PARAMETERS = CropParameters(
     k2o_rec_min_kg_ha=30, k2o_rec_max_kg_ha=80,  # workbook
     nutrient_rates_verified=False,  # workbook flags these rates unverified
     maintenance={
-        "leaf": 0.01,  # TEST VALUE
-        "stem": 0.003,  # TEST VALUE
-        "root": 0.006,  # TEST VALUE
-        "flower": 0.004,  # TEST VALUE
-        "fruit": 0.002,  # TEST VALUE
+        "leaf": 0.01,  #  
+        "stem": 0.003,  #  
+        "root": 0.006,  #  
+        "flower": 0.004,  #  
+        "fruit": 0.002,  #  
     },
     # Organ sink-demand coefficients read by the growth model each day.
     sink_demand={
-        "leaf": 0.2,  # TEST VALUE
-        "stem": 0.1,  # TEST VALUE
-        "root": 0.08,  # TEST VALUE
-        "flower": 0.02,  # TEST VALUE
-        "fruit": 0.25,  # TEST VALUE
+        "leaf": 0.2,  #  
+        "stem": 0.1,  #  
+        "root": 0.08,  #  
+        "flower": 0.02,  #  
+        "fruit": 0.25,  #  
     },
     biomass_ratio={
         "vegetative": {
-            "leaf": 0.5,  # TEST VALUE
-            "stem": 0.3,  # TEST VALUE
-            "root": 0.2,  # TEST VALUE
+            "leaf": 0.5,  #  
+            "stem": 0.3,  #  
+            "root": 0.2,  #  
         },
         "flowering": {
-            "leaf": 0.35,  # TEST VALUE
-            "stem": 0.3,  # TEST VALUE
-            "root": 0.15,  # TEST VALUE
-            "flower": 0.1,  # TEST VALUE
-            "fruit": 0.1,  # TEST VALUE
+            "leaf": 0.35,  #  
+            "stem": 0.3,  #  
+            "root": 0.15,  #  
+            "flower": 0.1,  #  
+            "fruit": 0.1,  #  
         },
         "fruiting": {
-            "leaf": 0.2,  # TEST VALUE
-            "stem": 0.1,  # TEST VALUE
-            "root": 0.08,  # TEST VALUE
-            "flower": 0.02,  # TEST VALUE
-            "fruit": 0.6,  # TEST VALUE
+            "leaf": 0.2,  #  
+            "stem": 0.1,  #  
+            "root": 0.08,  #  
+            "flower": 0.02,  #  
+            "fruit": 0.6,  #  
         },
     },
     phase_start_days={
-        "vegetative": 0,  # TEST VALUE
-        "flowering": 67,  # TEST VALUE
-        "fruiting": 121,  # TEST VALUE
+        "vegetative": 0,  #  
+        "flowering": 67,  #  
+        "fruiting": 121,  #  
     },
-    total_biomass_g=80,  # TEST VALUE: potential dry mass per plant at cycle end
+    total_biomass_g=80,  #  : potential dry mass per plant at cycle end
     initial_biomass={
-        "leaf": 1.0,  # TEST VALUE, g/plant
-        "stem": 0.5,  # TEST VALUE, g/plant
-        "root": 0.3,  # TEST VALUE, g/plant
+        "leaf": 1.0,  #  , g/plant
+        "stem": 0.5,  #  , g/plant
+        "root": 0.3,  #  , g/plant
     },
     harvestable_organ="fruit",
     cycle_min_days=50, cycle_max_days=270,  # workbook
